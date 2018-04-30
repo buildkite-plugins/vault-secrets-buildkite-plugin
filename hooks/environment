@@ -1,0 +1,114 @@
+#!/bin/bash
+
+# set -o xtrace
+set -eu -o pipefail
+
+processSshSecrets() {
+  local vaultServer="$1"
+  local key="$2"
+
+  echo "Found ${key}, downloading" >&2;
+  if ! ssh_key=$(secret_download "${vaultServer}" "$key") ; then
+    echo "+++ :warning: Failed to download ssh-key $key" >&2;
+    exit 1
+  fi
+  echo "Downloaded ${#ssh_key} bytes of ssh key"
+  add_ssh_private_key_to_agent "$ssh_key"
+  key_found=1
+
+  if [[ -z "${key_found:-}" ]] && [[ "${BUILDKITE_REPO:-}" =~ ^git ]] ; then
+    echo "+++ :warning: Failed to find an SSH key in secret bucket" >&2;
+    exit 1
+  fi
+}
+
+processEnvSecrets() {
+  local vaultServer="$1"
+  local envKey="$2"
+  local envscript=''
+
+  echo "Checking vault key ${envKey}" >&2
+  for key in $(list_secrets "$vaultServer" "$envKey")  ; do
+    echo "Downloading env secret from ${key}" >&2;
+    if ! envscript=$(echo "${envscript:-}" && secret_download "${vaultServer}" "${key}") ; then
+      echo "+++ :warning: Failed to download env from $key" >&2;
+      exit 1
+    fi
+  done
+  echo "Evaluating ${#envscript} bytes of env"
+  set -o allexport
+  eval "$envscript"
+  set +o allexport
+}
+
+processGitCredentialsSecrets() {
+  local vaultServer="$1"
+  local key="$2"
+
+  git_credentials=()
+
+  echo "Adding git-credentials in $key as a credential helper" >&2;
+  # if ! ssh_key=$(secret_download "${vault_server}" "$key") ; then
+  # echo "Skipping as not yet supported for Vault plugin" >&2;
+  git_credentials+=("'credential.helper=$basedir/git-credential-vault-secrets ${vaultServer} ${key}'")
+
+  if [[ "${#git_credentials[@]}" -gt 0 ]] ; then
+    export GIT_CONFIG_PARAMETERS
+    GIT_CONFIG_PARAMETERS=$( IFS=' '; echo -n "${git_credentials[*]}" )
+  fi
+}
+
+dumpEnvSecrets() {
+  if [[ "${BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV:-}" =~ ^(true|1)$ ]] ; then
+    echo "~~~ Environment variables that were set" >&2;
+    comm -13 <(echo "$env_before") <(env | sort) || true
+  fi
+}
+
+_source="${BASH_SOURCE[0]}"
+[ -z "${_source:-}" ] && _source="${0}"
+basedir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
+
+# shellcheck disable=SC1090
+. "$basedir/lib/shared.bash"
+
+TMPDIR=${TMPDIR:-/tmp}
+VAULT_BASE_PATH="${BUILDKITE_PLUGIN_VAULT_SECRETS_PATH:-data/buildkite}"
+
+project_slug="${BUILDKITE_PIPELINE_SLUG:-}"
+vault_server="${BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER:-}"
+vault_path="${VAULT_BASE_PATH:-}"
+[ ! -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_PREFIX:-}" ] && vault_path="${vault_path}/${BUILDKITE_PLUGIN_VAULT_SECRETS_PREFIX}"
+[ ! -z "${BUILDKITE_PIPELINE_SLUG:-}" ] && vault_path="${vault_path}/${BUILDKITE_PIPELINE_SLUG}"
+
+if [[ -n "$vault_server" ]] ; then
+  echo "~~~ Authenticating to :vault: $vault_server" >&2;
+  vault_auth "${vault_server:-}"
+  echo "~~~ Downloading secrets from :vault: $vault_server" >&2;
+
+  env_before="$(env | sort)"  # used by dumpEnvSecrets
+  secret_paths=(
+    "${vault_path}"
+    "${VAULT_BASE_PATH}"
+  )
+
+  secrets=''
+  for key in ${secret_paths[*]} ; do
+    echo "Checking vault secrets ${key}" >&2
+    secrets=$(echo "${secrets:-}" && list_secrets "$vault_server" "$key")
+  done
+
+  for secret in $secrets ; do
+    _key_base=`dirname $secret`
+    _key_name=`basename $secret`
+
+    case "${_key_name:-}" in
+      env|environment) processEnvSecrets "$vault_server" "$secret" ;;
+      private_ssh_key|id_rsa_github) processSshSecrets "$vault_server" "$secret" ;;
+      git-credentials) processGitCredentialsSecrets "$vault_server" "$secret" ;;
+    esac
+  done
+
+  dumpEnvSecrets
+
+fi
