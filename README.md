@@ -25,8 +25,8 @@ The private key is exposed to both the checkout and the command as an ssh-agent 
 steps:
   - command: ./run_build.sh
     plugins:
-      vault-secrets#v0.1.0:
-        server: my-vault-server
+      - vault-secrets#v0.1.0:
+          server: my-vault-server
 ```
 
 ## Uploading Secrets
@@ -124,10 +124,10 @@ Can be loaded using:
 steps:
   - command: ./run_build.sh
     plugins:
-      vault-secrets#v0.1.0:
-        server: my-vault-server
-        secrets:
-        - key
+      - vault-secrets#v0.1.0:
+          server: my-vault-server
+          secrets:
+          - key
 ```
 ## Options
 
