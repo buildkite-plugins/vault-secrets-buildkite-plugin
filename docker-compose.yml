@@ -1,6 +1,19 @@
-version: '2'
+version: '2.2'
 services:
   tests:
     image: buildkite/plugin-tester
     volumes:
       - .:/plugin
+
+  lint:
+    image: buildkite/plugin-linter
+    command: ['--id', 'mikeknox/vault-secrets']
+    volumes:
+      - ".:/plugin"
+
+  shellcheck:
+    image: koalaman/shellcheck:latest
+    command: -x lib/shared.bash hooks/pre-command
+    working_dir: /plugin
+    volumes:
+      - ".:/plugin"
