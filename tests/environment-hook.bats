@@ -618,6 +618,7 @@ load '/usr/local/lib/bats/load.bash'
 }
 
 @test "Dump env secrets" {
+  # export VAULT_STUB_DEBUG=/dev/stdout
   export BUILDKITE_PIPELINE_SLUG=testpipe
   export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
   export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true

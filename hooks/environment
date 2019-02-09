@@ -75,11 +75,10 @@ basedir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
 TMPDIR=${TMPDIR:-/tmp}
 VAULT_BASE_PATH="${BUILDKITE_PLUGIN_VAULT_SECRETS_PATH:-data/buildkite}"
 
-project_slug="${BUILDKITE_PIPELINE_SLUG:-}"
 vault_server="${BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER:-}"
 vault_path="${VAULT_BASE_PATH:-}"
-[ ! -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_PREFIX:-}" ] && vault_path="${vault_path}/${BUILDKITE_PLUGIN_VAULT_SECRETS_PREFIX}"
-[ ! -z "${BUILDKITE_PIPELINE_SLUG:-}" ] && vault_path="${vault_path}/${BUILDKITE_PIPELINE_SLUG}"
+[ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_PREFIX:-}" ] && vault_path="${vault_path}/${BUILDKITE_PLUGIN_VAULT_SECRETS_PREFIX}"
+[ -n "${BUILDKITE_PIPELINE_SLUG:-}" ] && vault_path="${vault_path}/${BUILDKITE_PIPELINE_SLUG}"
 
 if [[ -n "$vault_server" ]] ; then
   echo "~~~ Authenticating to :vault: $vault_server" >&2;
@@ -99,8 +98,9 @@ if [[ -n "$vault_server" ]] ; then
   done
 
   for secret in $secrets ; do
-    _key_base=`dirname $secret`
-    _key_name=`basename $secret`
+    # shellcheck disable=SC2034
+    _key_base="$(dirname "$secret")"
+    _key_name="$(basename "$secret")"
 
     case "${_key_name:-}" in
       env|environment) processEnvSecrets "$vault_server" "$secret" ;;
