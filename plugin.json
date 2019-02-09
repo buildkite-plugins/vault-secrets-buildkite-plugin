@@ -1,7 +1,0 @@
-{
-  "name": "Vault Secrets",
-  "description": "Expose build secrets stored in Vault to your jobs",
-  "author": "@mikeknox",
-  "public": true,
-  "requirements": ["curl", "bash", "vault"]
-}
