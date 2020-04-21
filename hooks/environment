@@ -88,7 +88,7 @@ if [[ -n "$vault_server" ]] ; then
   env_before="$(env | sort)"  # used by dumpEnvSecrets
   secret_paths=(
     "${vault_path}"
-    "${VAULT_BASE_PATH}"
+    # "${VAULT_BASE_PATH}"
   )
 
   secrets=''
