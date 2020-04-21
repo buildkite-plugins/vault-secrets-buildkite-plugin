@@ -15,7 +15,7 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VPC_PROXY=${VPC_PROXY}
   vault-tester:
-    image: "mikeknox/vault-tester:${TESTER_VAULT_VERSION:-0.10.0}"
+    image: "KennaSecurity/vault-tester:${TESTER_VAULT_VERSION:-0.10.0}"
     links:
       - vault-svc
     depends_on:
