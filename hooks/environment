@@ -27,14 +27,14 @@ processEnvSecrets() {
   local envKey="$2"
   local envscript=''
 
-  echo "Checking vault key ${envKey}" >&2
-  for key in $(list_secrets "$vaultServer" "$envKey")  ; do
-    echo "Downloading env secret from ${key}" >&2;
-    if ! envscript=$(echo "${envscript:-}" && secret_download "${vaultServer}" "${key}") ; then
-      echo "+++ :warning: Failed to download env from $key" >&2;
+  # echo "Checking vault key ${envKey}" >&2
+  # for key in $(list_secrets "$vaultServer" "$envKey")  ; do
+    echo "Downloading env secret from ${envKey}" >&2;
+    if ! envscript=$(echo "${envscript:-}" && secret_download "${vaultServer}" "${envKey}") ; then
+      echo "+++ :warning: Failed to download env from $envKey" >&2;
       exit 1
     fi
-  done
+  # done
   echo "Evaluating ${#envscript} bytes of env"
   set -o allexport
   eval "$envscript"
