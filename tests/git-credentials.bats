@@ -14,14 +14,14 @@ load '/usr/local/lib/bats/load.bash'
 @test "Get basic git-credentials from vault server" {
   export BUILDKITE_PLUGIN_VAULT_SECRETS_ADDR=https://vault_svr_url
   export BUILDKITE_PIPELINE_SLUG=testpipe
-  export GIT_CONFIG_PARAMETERS="'credential.helper=basedir/git-credential-vault-secrets ${BUILDKITE_PLUGIN_VAULT_SECRETS_ADDR} data/buildkite/testpipe/git-credentials'"
+  export GIT_CONFIG_PARAMETERS="'credential.helper=basedir/git-credential-vault-secrets ${BUILDKITE_PLUGIN_VAULT_SECRETS_ADDR} secret/buildkite/testpipe/git-credentials'"
   export TEST_CREDS1="https://user:password@host.io:7999/path"
   export TESTDATA=`echo -n "${TEST_CREDS1}" | base64`
 
   stub vault \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/git-credentials : echo ${TESTDATA}"
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/git-credentials : echo ${TESTDATA}"
 
-  run ./git-credential-vault-secrets ${BUILDKITE_PLUGIN_VAULT_SECRETS_ADDR} data/buildkite/${BUILDKITE_PIPELINE_SLUG}/git-credentials
+  run ./git-credential-vault-secrets ${BUILDKITE_PLUGIN_VAULT_SECRETS_ADDR} secret/buildkite/${BUILDKITE_PIPELINE_SLUG}/git-credentials
 
   assert_success
   assert_output --partial "protocol=https"
@@ -42,15 +42,15 @@ load '/usr/local/lib/bats/load.bash'
   skip "creds with args are not parsing correctly"
   export BUILDKITE_PLUGIN_VAULT_SECRETS_ADDR=https://vault_svr_url
   export BUILDKITE_PIPELINE_SLUG=testpipe
-  export GIT_CONFIG_PARAMETERS="'credential.helper=basedir/git-credential-vault-secrets ${BUILDKITE_PLUGIN_VAULT_SECRETS_ADDR} data/buildkite/testpipe/git-credentials'"
+  export GIT_CONFIG_PARAMETERS="'credential.helper=basedir/git-credential-vault-secrets ${BUILDKITE_PLUGIN_VAULT_SECRETS_ADDR} secret/buildkite/testpipe/git-credentials'"
   export TEST_CREDS1='https://user:password@host.io:7999/path?arg1=val1'
   # [schema://][user[:password]@]host[:port][/path][?[arg1=val1]...][#fragment]
   export TESTDATA=`echo -n "${TEST_CREDS1}" | base64`
 
   stub vault \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/git-credentials : echo ${TESTDATA}"
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/git-credentials : echo ${TESTDATA}"
 
-  run ./git-credential-vault-secrets ${BUILDKITE_PLUGIN_VAULT_SECRETS_ADDR} data/buildkite/${BUILDKITE_PIPELINE_SLUG}/git-credentials
+  run ./git-credential-vault-secrets ${BUILDKITE_PLUGIN_VAULT_SECRETS_ADDR} secret/buildkite/${BUILDKITE_PIPELINE_SLUG}/git-credentials
 
   assert_success
   assert_output --partial "protocol=https"

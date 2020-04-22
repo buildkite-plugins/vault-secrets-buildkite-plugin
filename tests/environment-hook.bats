@@ -17,10 +17,10 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0 " \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e '- env'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/env : echo -e '- MY_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/env/MY_SECRET : echo ${TESTDATA}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : exit 0 " \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : echo -e '- env'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/env : echo -e '- MY_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/env/MY_SECRET : echo ${TESTDATA}"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
@@ -44,10 +44,10 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0 "\
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e '- environment'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/environment : echo -e '- MY_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/environment/MY_SECRET : echo ${TESTDATA}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : exit 0 "\
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : echo -e '- environment'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/environment : echo -e '- MY_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/environment/MY_SECRET : echo ${TESTDATA}"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
@@ -72,12 +72,12 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0 "\
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e '- env\n- environment'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/env : echo -e '- MY_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/env/MY_SECRET : echo ${TESTDATA_ENV1}" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/environment : echo -e '- ANOTHER_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/environment/ANOTHER_SECRET : echo ${TESTDATA_ENV2}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : exit 0 "\
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : echo -e '- env\n- environment'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/env : echo -e '- MY_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/env/MY_SECRET : echo ${TESTDATA_ENV1}" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/environment : echo -e '- ANOTHER_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/environment/ANOTHER_SECRET : echo ${TESTDATA_ENV2}"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
@@ -103,10 +103,10 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e '- env'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : exit 0" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe/env : echo -e '- MY_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/env/MY_SECRET : echo ${TESTDATA}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : echo -e '- env'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : exit 0" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe/env : echo -e '- MY_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/env/MY_SECRET : echo ${TESTDATA}"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
@@ -130,10 +130,10 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e '- environment'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : exit 0" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe/environment : echo -e '- MY_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/environment/MY_SECRET : echo ${TESTDATA}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : echo -e '- environment'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : exit 0" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe/environment : echo -e '- MY_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/environment/MY_SECRET : echo ${TESTDATA}"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
@@ -158,12 +158,12 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e '- env\n- environment'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : exit 0" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe/env : echo -e '- MY_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/env/MY_SECRET : echo ${TESTDATA_ENV1}" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe/environment : echo -e '- ANOTHER_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/environment/ANOTHER_SECRET : echo ${TESTDATA_ENV2}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : echo -e '- env\n- environment'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : exit 0" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe/env : echo -e '- MY_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/env/MY_SECRET : echo ${TESTDATA_ENV1}" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe/environment : echo -e '- ANOTHER_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/environment/ANOTHER_SECRET : echo ${TESTDATA_ENV2}"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
@@ -190,12 +190,12 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e '- env'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e '- env'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe/env : echo -e '- MY_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/env/MY_SECRET : echo ${TESTDATA_ENV1}" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/env : echo -e '- ANOTHER_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/env/ANOTHER_SECRET : echo ${TESTDATA_ENV2}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : echo -e '- env'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : echo -e '- env'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe/env : echo -e '- MY_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/env/MY_SECRET : echo ${TESTDATA_ENV1}" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/env : echo -e '- ANOTHER_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/env/ANOTHER_SECRET : echo ${TESTDATA_ENV2}"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
@@ -220,12 +220,12 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e '- environment'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e '- environment'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe/environment : echo -e '- MY_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/environment/MY_SECRET : echo ${TESTDATA_ENV1}" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/environment : echo -e '- ANOTHER_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/environment/ANOTHER_SECRET : echo ${TESTDATA_ENV2}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : echo -e '- environment'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : echo -e '- environment'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe/environment : echo -e '- MY_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/environment/MY_SECRET : echo ${TESTDATA_ENV1}" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/environment : echo -e '- ANOTHER_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/environment/ANOTHER_SECRET : echo ${TESTDATA_ENV2}"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
@@ -254,16 +254,16 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e '- env\n- environment'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e '- env\n- environment'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe/env : echo -e '- MY_SECRET1'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/env/MY_SECRET1 : echo ${TESTDATA_ENV1}" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe/environment : echo -e '- MY_SECRET2'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/environment/MY_SECRET2 : echo ${TESTDATA_ENV2}" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/env : echo -e '- MY_SECRET3'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/env/MY_SECRET3 : echo ${TESTDATA_ENV3}" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/environment : echo -e '- MY_SECRET4'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/environment/MY_SECRET4 : echo ${TESTDATA_ENV4}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : echo -e '- env\n- environment'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : echo -e '- env\n- environment'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe/env : echo -e '- MY_SECRET1'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/env/MY_SECRET1 : echo ${TESTDATA_ENV1}" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe/environment : echo -e '- MY_SECRET2'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/environment/MY_SECRET2 : echo ${TESTDATA_ENV2}" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/env : echo -e '- MY_SECRET3'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/env/MY_SECRET3 : echo ${TESTDATA_ENV3}" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/environment : echo -e '- MY_SECRET4'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/environment/MY_SECRET4 : echo ${TESTDATA_ENV4}"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
@@ -291,13 +291,13 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0 " \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e '- git-credentials'"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : exit 0 " \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : echo -e '- git-credentials'"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
   assert_success
-  assert_output --partial "Adding git-credentials in data/buildkite/git-credentials as a credential helper"
+  assert_output --partial "Adding git-credentials in secret/buildkite/git-credentials as a credential helper"
   assert_output --partial "GIT_CONFIG_PARAMETERS='credential.helper="
 
   unstub vault
@@ -316,13 +316,13 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e '- git-credentials'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : exit 0"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : echo -e '- git-credentials'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : exit 0"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
   assert_success
-  assert_output --partial "Adding git-credentials in data/buildkite/testpipe/git-credentials as a credential helper"
+  assert_output --partial "Adding git-credentials in secret/buildkite/testpipe/git-credentials as a credential helper"
   assert_output --partial "GIT_CONFIG_PARAMETERS='credential.helper="
   unstub vault
 
@@ -345,9 +345,9 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e '- private_ssh_key'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/private_ssh_key : echo ${TESTDATA}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : exit 0" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : echo -e '- private_ssh_key'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/private_ssh_key : echo ${TESTDATA}"
 
   stub ssh-add \
     '- : echo added ssh key'
@@ -381,9 +381,9 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e '- private_ssh_key'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : exit 0" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/private_ssh_key : echo ${TESTDATA}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : echo -e '- private_ssh_key'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : exit 0" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/private_ssh_key : echo ${TESTDATA}"
 
   stub ssh-add \
     '- : echo added ssh key'
@@ -417,10 +417,10 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e '- private_ssh_key'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e '- private_ssh_key'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/private_ssh_key : echo ${TESTDATA}" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/private_ssh_key : echo ${TESTDATA}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : echo -e '- private_ssh_key'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : echo -e '- private_ssh_key'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/private_ssh_key : echo ${TESTDATA}" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/private_ssh_key : echo ${TESTDATA}"
 
   stub ssh-add \
     '- : echo added ssh key' \
@@ -458,11 +458,11 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e '- private_ssh_key\n- env'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/private_ssh_key : echo ${TESTDATA_KEY}" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/env : echo -e '- MY_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/env/MY_SECRET : echo ${TESTDATA_ENV}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : exit 0" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : echo -e '- private_ssh_key\n- env'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/private_ssh_key : echo ${TESTDATA_KEY}" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/env : echo -e '- MY_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/env/MY_SECRET : echo ${TESTDATA_ENV}"
 
   stub ssh-add \
     '- : echo added ssh key'
@@ -498,11 +498,11 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e '- private_ssh_key\n- env'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : exit 0" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/private_ssh_key : echo ${TESTDATA_KEY}" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe/env : echo -e '- MY_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/env/MY_SECRET : echo ${TESTDATA_ENV}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : echo -e '- private_ssh_key\n- env'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : exit 0" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/private_ssh_key : echo ${TESTDATA_KEY}" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe/env : echo -e '- MY_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/env/MY_SECRET : echo ${TESTDATA_ENV}"
 
   stub ssh-add \
     '- : echo added ssh key'
@@ -541,11 +541,11 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e '- env\n- private_ssh_key\n- git-credentials'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/env : echo -e '- MY_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/env/MY_SECRET : echo ${TESTDATA_ENV}" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/private_ssh_key : echo ${TESTDATA_KEY}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : exit 0" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : echo -e '- env\n- private_ssh_key\n- git-credentials'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/env : echo -e '- MY_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/env/MY_SECRET : echo ${TESTDATA_ENV}" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/private_ssh_key : echo ${TESTDATA_KEY}"
 
   stub ssh-add \
     '- : echo added ssh key'
@@ -556,7 +556,7 @@ load '/usr/local/lib/bats/load.bash'
   assert_output --partial "ssh-agent (pid 24124)"
   assert_output --partial "added ssh key"
   assert_output --partial "MY_SECRET=fooblah"
-  assert_output --partial "Adding git-credentials in data/buildkite/git-credentials as a credential helper"
+  assert_output --partial "Adding git-credentials in secret/buildkite/git-credentials as a credential helper"
   assert_output --partial "GIT_CONFIG_PARAMETERS='credential.helper="
   # assert_output --partial "Could not open a connection to your authentication agent"
 
@@ -587,11 +587,11 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e '- env\n- private_ssh_key\n- git-credentials'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : exit 0" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe/env : echo -e '- MY_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/env/MY_SECRET : echo ${TESTDATA_ENV}" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/private_ssh_key : echo ${TESTDATA_KEY}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : echo -e '- env\n- private_ssh_key\n- git-credentials'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : exit 0" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe/env : echo -e '- MY_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/env/MY_SECRET : echo ${TESTDATA_ENV}" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/private_ssh_key : echo ${TESTDATA_KEY}"
 
   stub ssh-add \
     '- : echo added ssh key'
@@ -602,7 +602,7 @@ load '/usr/local/lib/bats/load.bash'
   assert_output --partial "ssh-agent (pid 12423)"
   assert_output --partial "added ssh key"
   assert_output --partial "MY_SECRET=fooblah"
-  assert_output --partial "Adding git-credentials in data/buildkite/testpipe/git-credentials as a credential helper"
+  assert_output --partial "Adding git-credentials in secret/buildkite/testpipe/git-credentials as a credential helper"
   assert_output --partial "GIT_CONFIG_PARAMETERS='credential.helper="
 
   unstub ssh-agent
@@ -628,11 +628,11 @@ load '/usr/local/lib/bats/load.bash'
 
   stub vault \
     'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e '- env'" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite : exit 0" \
-    "list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe/env : echo -e '- TEST_SECRET\n- ANOTHER_SECRET'" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/env/TEST_SECRET : echo ${TESTDATA_ENV_1}" \
-    "read -address=https://vault_svr_url -field=value data/buildkite/testpipe/env/ANOTHER_SECRET : echo ${TESTDATA_ENV_2}"
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe : echo -e '- env'" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite : exit 0" \
+    "list -address=https://vault_svr_url -format=yaml secret/buildkite/testpipe/env : echo -e '- TEST_SECRET\n- ANOTHER_SECRET'" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/env/TEST_SECRET : echo ${TESTDATA_ENV_1}" \
+    "read -address=https://vault_svr_url -field=value secret/buildkite/testpipe/env/ANOTHER_SECRET : echo ${TESTDATA_ENV_2}"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 

@@ -73,7 +73,7 @@ basedir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
 . "$basedir/lib/shared.bash"
 
 TMPDIR=${TMPDIR:-/tmp}
-VAULT_BASE_PATH="${BUILDKITE_PLUGIN_VAULT_SECRETS_PATH:-data/buildkite}"
+VAULT_BASE_PATH="${BUILDKITE_PLUGIN_VAULT_SECRETS_PATH:-secret/buildkite}"
 
 vault_server="${BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER:-}"
 vault_path="${VAULT_BASE_PATH:-}"

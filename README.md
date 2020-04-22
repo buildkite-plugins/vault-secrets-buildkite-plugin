@@ -17,7 +17,7 @@ Different types of secrets are supported and exposed to your builds in appropria
 
 ## Example
 
-The following pipeline downloads a private key from `https://my-vault-server/data/buildkite/{pipeline}/ssh_private_key` and set of environment variables from `https://my-vault-server/data/buildkite/{pipeline}/environment`.
+The following pipeline downloads a private key from `https://my-vault-server/secret/buildkite/{pipeline}/ssh_private_key` and set of environment variables from `https://my-vault-server/secret/buildkite/{pipeline}/environment`.
 
 The private key is exposed to both the checkout and the command as an ssh-agent instance. The secrets in the env file are exposed as environment variables.
 
@@ -32,7 +32,7 @@ steps:
 ## Uploading Secrets
 Secrets are uploading using the Vault CLI, as a `base64` encoded blob in a field called *value*.
 ```sh
-echo -n $(cat private_ssh_key | base64) | vault write  data/buildkite/test-pipeline/private_ssh_key \
+echo -n $(cat private_ssh_key | base64) | vault write  secret/buildkite/test-pipeline/private_ssh_key \
   value=-
 ```
 
@@ -53,7 +53,7 @@ etc
 The plugin needs at least *read* and *list* capabilities for the data.
 A sample read policy, this could be used by agents.
 ```
-path "data/buildkite/*" {
+path "secret/buildkite/*" {
     capabilities = ["read", "list"]
 }
 ```
@@ -62,19 +62,19 @@ A sample update policy for build engineers or developers.
 This would allow creation of secrets for pipelines, but not as defaults.
 ```
 # Allow update of secrets
-path "data/buildkite/*" {
+path "secret/buildkite/*" {
     capabilities = ["create", "update", "delete", "list"]
 }
-path "data/buildkite/env" {
+path "secret/buildkite/env" {
     capabilities = ["deny"]
 }
-path "data/buildkite/environment" {
+path "secret/buildkite/environment" {
     capabilities = ["deny"]
 }
-path "data/buildkite/git-credentials" {
+path "secret/buildkite/git-credentials" {
     capabilities = ["deny"]
 }
-path "data/buildkite/private_ssh_key" {
+path "secret/buildkite/private_ssh_key" {
     capabilities = ["deny"]
 }
 ```
@@ -89,7 +89,7 @@ ssh-keygen -t rsa -b 4096 -f id_rsa_buildkite
 pbcopy < id_rsa_buildkite.pub # paste this into your github deploy key
 
 export my_pipeline=my-buildkite-secrets
-echo -n $(cat id_rsa_buildkite | base64) | vault write data/buildkite/my_pipeline/private_ssh_key \
+echo -n $(cat id_rsa_buildkite | base64) | vault write secret/buildkite/my_pipeline/private_ssh_key \
     value=-
 ```
 
@@ -102,7 +102,7 @@ https://user:password@host/path/to/repo
 ```
 
 ```
-vault write data/buildkite/my_pipeline/git-credentials value=- <<< $(echo "https://user:password@host/path/to/repo" | base64)
+vault write secret/buildkite/my_pipeline/git-credentials value=- <<< $(echo "https://user:password@host/path/to/repo" | base64)
 ```
 
 These are then exposed via a [gitcredential helper](https://git-scm.com/docs/gitcredentials) which will download the
@@ -113,11 +113,11 @@ credentials as needed.
 Key values pairs can also be uploaded.
 
 ```
-vault write data/buildkite/my_pipeline/environment value=- <<< $(echo "MY_SECRET=blah" | base64)
+vault write secret/buildkite/my_pipeline/environment value=- <<< $(echo "MY_SECRET=blah" | base64)
 ```
 
 ```
-vault write data/buildkite/my_pipeline/env_key value=- <<< $(echo "my secret"| base64)
+vault write secret/buildkite/my_pipeline/env_key value=- <<< $(echo "my secret"| base64)
 ```
 Can be loaded using:
 ```yml
@@ -132,7 +132,7 @@ steps:
 ## Options
 
 ### `path`
-defaults to: `data/buildkite`
+defaults to: `secret/buildkite`
 This is expected to be a kv store
 
 Alternative Base Path to use for Vault secrets
