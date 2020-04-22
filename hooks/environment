@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -o xtrace
+# set -o xtrace
 set -eu -o pipefail
 
 processSshSecrets() {
@@ -27,14 +27,11 @@ processEnvSecrets() {
   local envKey="$2"
   local envscript=''
 
-  # echo "Checking vault key ${envKey}" >&2
-  # for key in $(list_secrets "$vaultServer" "$envKey")  ; do
-    echo "Downloading env secret from ${envKey}" >&2;
-    if ! envscript=$(echo "${envscript:-}" && secret_download "${vaultServer}" "${envKey}") ; then
-      echo "+++ :warning: Failed to download env from $envKey" >&2;
-      exit 1
-    fi
-  # done
+  echo "Downloading env secret from ${envKey}" >&2;
+  if ! envscript=$(echo "${envscript:-}" && secret_download "${vaultServer}" "${envKey}") ; then
+    echo "+++ :warning: Failed to download env from $envKey" >&2;
+    exit 1
+  fi
   echo "Evaluating ${#envscript} bytes of env"
   set -o allexport
   eval "$envscript"
@@ -48,8 +45,6 @@ processGitCredentialsSecrets() {
   git_credentials=()
 
   echo "Adding git-credentials in $key as a credential helper" >&2;
-  # if ! ssh_key=$(secret_download "${vault_server}" "$key") ; then
-  # echo "Skipping as not yet supported for Vault plugin" >&2;
   git_credentials+=("'credential.helper=$basedir/git-credential-vault-secrets ${vaultServer} ${key}'")
 
   if [[ "${#git_credentials[@]}" -gt 0 ]] ; then
@@ -88,7 +83,6 @@ if [[ -n "$vault_server" ]] ; then
   env_before="$(env | sort)"  # used by dumpEnvSecrets
   secret_paths=(
     "${vault_path}"
-    # "${VAULT_BASE_PATH}"
   )
 
   secrets=''
@@ -110,5 +104,4 @@ if [[ -n "$vault_server" ]] ; then
   done
 
   dumpEnvSecrets
-
 fi
