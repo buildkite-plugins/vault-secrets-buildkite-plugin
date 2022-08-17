@@ -1,7 +1,5 @@
 # Vault Secrets Buildkite Plugins
 
-> :warning: We nolonger use HashiCorp Vault, so I can't actively maintain this plugin. If you'd like to take over maintenance, please reach out.
-
 __This plugin was originally based on the the *AWS S3 Secrets Buildkite Plugin*__
 
 __All secrets are base64 encoded in Vault__
@@ -175,6 +173,10 @@ When writing test plans, note that secrets are processed in the order they appea
 - Add `SVC_VAULT_VERSION` to specify version of Vault service
 - Document use of Makefile
 - Merge compose files together
+
+## Acknowledgements
+A huge thank you to the original author @mknox
+
 
 ## License
 
