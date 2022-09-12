@@ -1,6 +1,6 @@
 name: "Vault Secrets"
 description: "Expose build secrets stored in Vault to your jobs"
-author: "@mikeknox"
+author: "@mikeknox, @buildkite-plugins"
 public: true
 requirements:
   - curl
@@ -9,6 +9,12 @@ requirements:
 configuration:
   properties:
     server:
+      type: string
+    auth-method:
+      type: string
+    role-id:
+      type: string
+    secret-id:
       type: string
   required:
     - server
