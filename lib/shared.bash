@@ -11,66 +11,46 @@ esac
 
 vault_auth() {
   local server="$1"
-  local auth_params=''
 
   # Currently we only support AppRole authentication.
   # These values are referenced when authenticating to the Vault server:
   #   BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD - approle
 
-  #   RoleID and SecretID should be stored securely on the agent, there are probably better ways to do this, but here is a start.
+  #   RoleID and SecretID should be stored securely on the agent, there are probably better ways to do this, but here is a start
+  #   We'll use these two values for the RoleID and SecretID:
+  #     BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ID
+  #     BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID
+  #
+  #   For now, you will need to define the secret ID oustide of the plugin, though this will probably change.
 
-  #   BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ID
-  #   BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID
-
-  [ -n "${server:-}" ] && auth_params="${auth_params} -address=${server}"
-  [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" ] && auth_params="${auth_params} -method=${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD}"
-
-  if [ "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD}" = "approle" ]; then
-    echo "$BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE_ID"
-    echo "$BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET_ID"
-
-    [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE_ID:-}" ] && auth_params="${auth_params} role_id=${BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE_ID}"
-    [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET_ID:-}" ] && auth_params="${auth_params} secret_id=${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET_ID}"
-
-    vault write -field=token auth/approle/login "$auth_params" \
+   # approle authentication
+  if [ "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" = "approle" ]; then
+    [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE_ID:-}" ]
+    [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET_ID:-}" ]
+    
+    # export the vault token to be used for this session
+    # shellcheck disable=SC2155
+    export VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
      role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE_ID" \
-     secrets_id= "$BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET_ID"
+     secret_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET_ID")
+
+    echo "Successfully authenticated with RoleID ${BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE_ID}"
+
     return "${PIPESTATUS[0]}"
   fi
-
 }
-
-## This is the old auth method for reference
-# vault_auth() {
-#   local server="$1"
-#   local auth_params=''
-#   # role is defined in Vault Configuration
-#   # -header=<foo> # used to set X-Auth
-#   # BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD - aws
-#   # BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_HEADER
-#   # BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE
-#   [ -n "${server:-}" ] && auth_params="${auth_params} -address=${server}"
-#   [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" ] && auth_params="${auth_params} -method=${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD}"
-#   [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_HEADER:-}" ] && auth_params="${auth_params} -header_value=${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_HEADER}"
-#   [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE:-}" ] && auth_params="${auth_params} role=${BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE}"
-
-#   if [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" ] ; then
-#     # don't output the token to log, even though it's a temporary token
-#     # shellcheck disable=SC2086
-#     vault auth $auth_params | grep -v ^token:
-#     return "${PIPESTATUS[0]}"
-#   else
-#     # shellcheck disable=SC2086
-#     echo "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_TOKEN:-}" | vault auth ${auth_params:-} -
-#   fi
-# }
 
 list_secrets() {
   local server="$1"
   local key="$2"
 
+
   local _list
-  _list=$(vault list -address="$server" -format=yaml "$key" | sed 's/^- //g' )
+
+  if ! _list=$(vault kv list -address="$server" -format=yaml "$key" | sed 's/^- //g'); then
+    echo "unable to list secrets" >&2;
+    return "${PIPESTATUS[0]}"
+  fi
   local retVal=${PIPESTATUS[0]}
 
   for lineItem in ${_list} ; do
@@ -89,7 +69,7 @@ secret_exists() {
   local _key_name
   _key_name="$(basename "$key")"
   local _list
-  _list=$(vault list -address="$server" -format=yaml "$_key_base" )
+  _list=$(vault kv list -address="$server" -format=yaml "$_key_base" )
 
   echo "${_list}" | grep "^- ${_key_name}$" >& /dev/null
   # shellcheck disable=SC2181
@@ -103,8 +83,7 @@ secret_exists() {
 secret_download() {
   local server="$1"
   local key="$2"
-
-  _secret=$(vault read -address="${server}" -field=value "$key" | base64 $BASE64_DECODE_ARGS)
+  _secret=$(vault kv get -address="${server}" -field=value "$key" | base64 $BASE64_DECODE_ARGS)
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ] ; then
     return 1
