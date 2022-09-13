@@ -26,13 +26,15 @@ vault_auth() {
   [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" ] && auth_params="${auth_params} -method=${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD}"
 
   if [ "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD}" = "approle" ]; then
+    echo "$BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE_ID"
+    echo "$BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET_ID"
 
     [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE_ID:-}" ] && auth_params="${auth_params} role_id=${BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE_ID}"
     [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET_ID:-}" ] && auth_params="${auth_params} secret_id=${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET_ID}"
 
     vault write -field=token auth/approle/login "$auth_params" \
-    # role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE_ID" \
-    # secrets_id= "$BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET_ID"
+     role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE_ID" \
+     secrets_id= "$BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET_ID"
     return "${PIPESTATUS[0]}"
   fi
 
