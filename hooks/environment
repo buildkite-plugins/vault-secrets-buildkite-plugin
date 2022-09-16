@@ -23,19 +23,14 @@ processSshSecrets() {
 }
 
 processEnvSecrets() {
-  echo "we are in the processEnvSecrets function"
   local vaultServer="$1"
   local envKey="$2"
   local envscript=''
-
-  echo "Checking vault key ${envKey}" >&2
-  for key in $(list_secrets "$vaultServer" "$envKey")  ; do
-    echo "Downloading env secret from ${key}" >&2;
+  echo "Downloading env secret from ${key}" >&2;
     if ! envscript=$(echo "${envscript:-}" && secret_download "${vaultServer}" "${key}") ; then
       echo "+++ :warning: Failed to download env from $key" >&2;
       exit 1
-    fi
-  done
+   fi
   echo "Evaluating ${#envscript} bytes of env"
   set -o allexport
   eval "$envscript"
@@ -91,7 +86,6 @@ if [[ -n "$vault_server" ]] ; then
     "${vault_path}"
     "${VAULT_BASE_PATH}"
   )
-  echo "secret paths ${secret_paths[*]}"
   secrets=''
   # shellcheck disable=SC2048
   for key in ${secret_paths[*]} ; do
@@ -99,20 +93,14 @@ if [[ -n "$vault_server" ]] ; then
     secrets=$(echo "${secrets:-}" && list_secrets "$vault_server" "$key")
   done
 
-  echo "entering the secret processing zone"
-
   for secret in $secrets ; do
-    echo "we made it here $secrets and $secret"
     # shellcheck disable=SC2034
     _key_base="$(dirname "$secret")"
     _key_name="$(basename "$secret")"
-
-    echo "base $_key_base and name $_key_name"
     case "${_key_name:-}" in
-      env|environment) echo "we are going to process env secrets" && processEnvSecrets "$vault_server" "$secret" ;;
+      env|environment) processEnvSecrets "$vault_server" "$secret" ;;
       private_ssh_key|id_rsa_github) processSshSecrets "$vault_server" "$secret" ;;
       git-credentials) processGitCredentialsSecrets "$vault_server" "$secret" ;;
-      *) echo "unable to find a matching case" ;;
     esac
   done
 

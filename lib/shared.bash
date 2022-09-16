@@ -44,7 +44,6 @@ list_secrets() {
   local server="$1"
   local key="$2"
 
-
   local _list
 
   if ! _list=$(vault kv list -address="$server" -format=yaml "$key" | sed 's/^- //g'); then
@@ -83,7 +82,10 @@ secret_exists() {
 secret_download() {
   local server="$1"
   local key="$2"
-  _secret=$(vault kv get -address="${server}" -field=value "$key" | base64 $BASE64_DECODE_ARGS)
+  if ! _secret=$(vault kv get -field=data -format=yaml secret/buildkite/env | sed 's/: /=/g' ); then
+    echo "Failed to download secrets"
+    exit 1
+  fi
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ] ; then
     return 1
