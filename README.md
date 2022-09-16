@@ -175,7 +175,7 @@ When writing test plans, note that secrets are processed in the order they appea
 - Merge compose files together
 
 ## Acknowledgements
-A huge thank you to the original author @mknox
+A huge thank you to the original author [@mikeknox](https://github.com/mikeknox) for providing the framework for this plugin
 
 
 ## License
