@@ -65,7 +65,7 @@ _source="${BASH_SOURCE[0]}"
 [ -z "${_source:-}" ] && _source="${0}"
 basedir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
 
-# shellcheck disable=SC1091
+# shellcheck source=lib/shared.bash
 . "$basedir/lib/shared.bash"
 
 TMPDIR=${TMPDIR:-/tmp}
