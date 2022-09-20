@@ -10,13 +10,19 @@ configuration:
   properties:
     server:
       type: string
-    auth-method:
-      type: string
-    role-id:
-      type: string
-    secret-id:
-      type: string
+    auth:
+      type: object
+      properties:
+        method:
+          enum:
+            - 'approle'
+            - ''
+        role-id:
+          type: string
   required:
     - server
+    - auth
   additionalProperties: false
+  dependencies:
+    auth: [ method ]
 

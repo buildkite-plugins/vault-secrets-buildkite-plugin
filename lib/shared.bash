@@ -25,16 +25,17 @@ vault_auth() {
 
    # approle authentication
   if [ "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" = "approle" ]; then
-    [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE_ID:-}" ]
-    [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET_ID:-}" ]
     
-    # export the vault token to be used for this session
-    # shellcheck disable=SC2155
-    export VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
-     role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE_ID" \
-     secret_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET_ID")
+    # export the vault token to be used for this job - this command writes to the auth/approle/login endpoint
+    # on success, vault will return the token which we export as VAULT_TOKEN for this shell
+    export VAULT_TOKEN
+    if ! VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
+     role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID" \
+     secret_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET_ID"); then
+      echo "Failed to get vault token"
+    fi
 
-    echo "Successfully authenticated with RoleID ${BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE_ID}"
+    echo "Successfully authenticated with RoleID ${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID} and updated vault token"
 
     return "${PIPESTATUS[0]}"
   fi

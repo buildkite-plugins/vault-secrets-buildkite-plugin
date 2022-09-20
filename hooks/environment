@@ -24,7 +24,7 @@ processSshSecrets() {
 
 processEnvSecrets() {
   local vaultServer="$1"
-  local envKey="$2"
+  local key="$2"
   local envscript=''
   echo "Downloading env secret from ${key}" >&2;
     if ! envscript=$(echo "${envscript:-}" && secret_download "${vaultServer}" "${key}") ; then
@@ -87,7 +87,6 @@ if [[ -n "$vault_server" ]] ; then
     "${VAULT_BASE_PATH}"
   )
   secrets=''
-  # shellcheck disable=SC2048
   for key in ${secret_paths[*]} ; do
     echo "Checking vault secrets ${key}" >&2
     secrets=$(echo "${secrets:-}" && list_secrets "$vault_server" "$key")
