@@ -26,6 +26,13 @@ vault_auth() {
    # approle authentication
   if [ "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" = "approle" ]; then
     
+    secret_var="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV:-$VAULT_SECRET_ID}"
+
+    if [[ -z "${!secret_var:-}" ]]; then
+      echo "+++  🚨 No vault secret id found in \$${secret_var}"
+      exit 1
+    fi
+    
     # export the vault token to be used for this job - this command writes to the auth/approle/login endpoint
     # on success, vault will return the token which we export as VAULT_TOKEN for this shell
     export VAULT_TOKEN
