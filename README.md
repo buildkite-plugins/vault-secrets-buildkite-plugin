@@ -23,7 +23,7 @@ The keys in the `env` secret are exposed in the `checkout` and `command` as envi
 steps:
   - command: ./run_build.sh
     plugins:
-      - buildkite-plugins/vault-secrets#v0.2.0:
+      - vault-secrets#v0.2.0:
           server: "https://my-vault-server"
           path: secret/buildkite
           auth:
