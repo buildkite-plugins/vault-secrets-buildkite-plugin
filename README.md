@@ -13,19 +13,25 @@ Different types of secrets are supported and exposed to your builds in appropria
 - Environment Variables for strings
 - `git-credential` via git's credential.helper
 
-## Example
+## ENV example
 
-The following pipeline downloads a private key from `https://my-vault-server/data/buildkite/{pipeline}/ssh_private_key` and set of environment variables from `https://my-vault-server/data/buildkite/{pipeline}/environment`.
+The following pipeline downloads env secrets stored in `https://my-vault-server/secret/buildkite/{pipeline}/env` and git-credentials from `https://my-vault-server/secret/buildkite/{pipeline}/git-credentials`
 
-The private key is exposed to both the checkout and the command as an ssh-agent instance. The secrets in the env file are exposed as environment variables.
+The keys in the `env` secret are exposed in the `checkout` and `command` as environment variables. The git-credentials are exposed as an environment variable `GIT_CONFIG_PARAMETERS` and are also exposed in the `checkout` and `command`.
 
 ```yml
 steps:
   - command: ./run_build.sh
     plugins:
-      - mikeknox/vault-secrets#v0.1.:
-          server: my-vault-server
+      - buildkite-plugins/vault-secrets#v0.2.0:
+          server: "https://my-vault-server"
+          path: secret/buildkite
+          auth:
+            method: approle
+            role-id: "my-role-id"
+            secret-env: "VAULT_SECRET_ID"
 ```
+
 
 ## Uploading Secrets
 

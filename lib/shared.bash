@@ -11,25 +11,40 @@ esac
 
 vault_auth() {
   local server="$1"
-  local auth_params=''
-  # role is defined in Vault Configuration
-  # -header=<foo> # used to set X-Auth
-  # BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD - aws
-  # BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_HEADER
-  # BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE
-  [ -n "${server:-}" ] && auth_params="${auth_params} -address=${server}"
-  [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" ] && auth_params="${auth_params} -method=${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD}"
-  [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_HEADER:-}" ] && auth_params="${auth_params} -header_value=${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_HEADER}"
-  [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE:-}" ] && auth_params="${auth_params} role=${BUILDKITE_PLUGIN_VAULT_SECRETS_ROLE}"
 
-  if [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" ] ; then
-    # don't output the token to log, even though it's a temporary token
-    # shellcheck disable=SC2086
-    vault auth $auth_params | grep -v ^token:
+  # Currently we only support AppRole authentication.
+  # These values are referenced when authenticating to the Vault server:
+  #   BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD - approle
+
+  #   RoleID and SecretID should be stored securely on the agent, there are probably better ways to do this, but here is a start
+  #   We'll use these two values for the RoleID and SecretID:
+  #     BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ID
+  #     BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID
+  #
+  #   For now, you will need to define the secret ID oustide of the plugin, though this will probably change.
+
+   # approle authentication
+  if [ "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" = "approle" ]; then
+    
+    secret_var="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV:-$VAULT_SECRET_ID}"
+
+    if [[ -z "${!secret_var:-}" ]]; then
+      echo "+++  🚨 No vault secret id found in \$${secret_var}"
+      exit 1
+    fi
+    
+    # export the vault token to be used for this job - this command writes to the auth/approle/login endpoint
+    # on success, vault will return the token which we export as VAULT_TOKEN for this shell
+    export VAULT_TOKEN
+    if ! VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
+     role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID" \
+     secret_id="${!secret_var:-}"); then
+      echo "Failed to get vault token"
+    fi
+
+    echo "Successfully authenticated with RoleID ${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID} and updated vault token"
+
     return "${PIPESTATUS[0]}"
-  else
-    # shellcheck disable=SC2086
-    echo "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_TOKEN:-}" | vault auth ${auth_params:-} -
   fi
 }
 
@@ -38,7 +53,11 @@ list_secrets() {
   local key="$2"
 
   local _list
-  _list=$(vault list -address="$server" -format=yaml "$key" | sed 's/^- //g' )
+
+  if ! _list=$(vault kv list -address="$server" -format=yaml "$key" | sed 's/^- //g'); then
+    echo "unable to list secrets" >&2;
+    return "${PIPESTATUS[0]}"
+  fi
   local retVal=${PIPESTATUS[0]}
 
   for lineItem in ${_list} ; do
@@ -57,7 +76,7 @@ secret_exists() {
   local _key_name
   _key_name="$(basename "$key")"
   local _list
-  _list=$(vault list -address="$server" -format=yaml "$_key_base" )
+  _list=$(vault kv list -address="$server" -format=yaml "$_key_base" )
 
   echo "${_list}" | grep "^- ${_key_name}$" >& /dev/null
   # shellcheck disable=SC2181
@@ -71,8 +90,10 @@ secret_exists() {
 secret_download() {
   local server="$1"
   local key="$2"
-
-  _secret=$(vault read -address="${server}" -field=value "$key" | base64 $BASE64_DECODE_ARGS)
+  if ! _secret=$(vault kv get -field=data -format=yaml secret/buildkite/env | sed 's/: /=/g' ); then
+    echo "Failed to download secrets"
+    exit 1
+  fi
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ] ; then
     return 1
@@ -89,6 +110,7 @@ add_ssh_private_key_to_agent() {
   fi
 
   echo "Loading ssh-key into ssh-agent (pid ${SSH_AGENT_PID:-})" >&2;
+
   echo "$ssh_key" | env SSH_ASKPASS="/bin/false" ssh-add -
 }
 

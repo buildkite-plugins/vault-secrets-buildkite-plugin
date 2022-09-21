@@ -24,17 +24,13 @@ processSshSecrets() {
 
 processEnvSecrets() {
   local vaultServer="$1"
-  local envKey="$2"
+  local key="$2"
   local envscript=''
-
-  echo "Checking vault key ${envKey}" >&2
-  for key in $(list_secrets "$vaultServer" "$envKey")  ; do
-    echo "Downloading env secret from ${key}" >&2;
+  echo "Downloading env secret from ${key}" >&2;
     if ! envscript=$(echo "${envscript:-}" && secret_download "${vaultServer}" "${key}") ; then
       echo "+++ :warning: Failed to download env from $key" >&2;
       exit 1
-    fi
-  done
+   fi
   echo "Evaluating ${#envscript} bytes of env"
   set -o allexport
   eval "$envscript"
@@ -69,7 +65,7 @@ _source="${BASH_SOURCE[0]}"
 [ -z "${_source:-}" ] && _source="${0}"
 basedir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
 
-# shellcheck disable=SC1090
+# shellcheck source=lib/shared.bash
 . "$basedir/lib/shared.bash"
 
 TMPDIR=${TMPDIR:-/tmp}
@@ -90,7 +86,6 @@ if [[ -n "$vault_server" ]] ; then
     "${vault_path}"
     "${VAULT_BASE_PATH}"
   )
-
   secrets=''
   for key in ${secret_paths[*]} ; do
     echo "Checking vault secrets ${key}" >&2
@@ -101,7 +96,6 @@ if [[ -n "$vault_server" ]] ; then
     # shellcheck disable=SC2034
     _key_base="$(dirname "$secret")"
     _key_name="$(basename "$secret")"
-
     case "${_key_name:-}" in
       env|environment) processEnvSecrets "$vault_server" "$secret" ;;
       private_ssh_key|id_rsa_github) processSshSecrets "$vault_server" "$secret" ;;
