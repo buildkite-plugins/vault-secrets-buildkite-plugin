@@ -38,7 +38,7 @@ vault_auth() {
     export VAULT_TOKEN
     if ! VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
      role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID" \
-     secret_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET_ID"); then
+     secret_id="${!secret_var:-}"); then
       echo "Failed to get vault token"
     fi
 
