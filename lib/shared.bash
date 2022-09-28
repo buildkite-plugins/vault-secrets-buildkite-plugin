@@ -35,12 +35,13 @@ vault_auth() {
     
     # export the vault token to be used for this job - this command writes to the auth/approle/login endpoint
     # on success, vault will return the token which we export as VAULT_TOKEN for this shell
-    export VAULT_TOKEN
     if ! VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
      role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID" \
      secret_id="${!secret_var:-}"); then
       echo "Failed to get vault token"
     fi
+
+    export VAULT_TOKEN
 
     echo "Successfully authenticated with RoleID ${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID} and updated vault token"
 
