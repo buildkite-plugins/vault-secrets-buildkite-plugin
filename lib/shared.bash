@@ -60,7 +60,7 @@ list_secrets() {
     return "${PIPESTATUS[0]}"
   fi
   local retVal=${PIPESTATUS[0]}
-
+  echo "${_list}"
   for lineItem in ${_list} ; do
     echo "$key/${lineItem}"
   done
