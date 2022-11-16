@@ -7,11 +7,22 @@ env:
   DUMP_ENV: "true"
   VAULT_DEV_ROOT_TOKEN_ID: "88F4384B-98E9-4AE3-B00C-F55678F89080"
 steps:
-  - label: ":bash: :hammer:"
+  - label: ":sparkles: Lint"
+    plugins:
+      - docker-compose#v4.5.0:
+          run: lint
+
+  - label: ":shell: Shellcheck"
+    plugins:
+      - docker-compose#v4.5.0:
+          run: shellcheck
+
+  - label: ":bat: :test_tube: BATS tests"
     plugins:
       - docker-compose#v4.5.0:
           run: tests
-  - label: ":hammer: env variable test"
+          
+  - label: ":vault: :test_tube: Integration Tests"
     command:  /app/.buildkite/steps/test_envvar.sh
     plugins:
       docker-compose#v4.5.0:

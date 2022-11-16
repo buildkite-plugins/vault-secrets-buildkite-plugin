@@ -1,7 +1,7 @@
 version: '2.3'
 services:
   vault-svc:
-    image: "vault:${SVC_VAULT_VERSION:-0.10.0}"
+    image: "vault:${SVC_VAULT_VERSION:-1.12.1}"
     cap_add:
     - IPC_LOCK
     healthcheck:

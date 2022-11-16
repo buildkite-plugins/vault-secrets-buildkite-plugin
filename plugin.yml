@@ -22,7 +22,4 @@ configuration:
   required:
     - server
     - auth
-  additionalProperties: false
-  dependencies:
-    auth: [ method ]
 

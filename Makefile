@@ -15,7 +15,7 @@ all:;: '$(VAULT_ADDR)' \
 	'$(DUMP_ENV)' \
 	'$(VAULT_DEV_ROOT_TOKEN_ID)'
 
-all: clean test initegration-test
+all: clean test integration-test
 
 test:
 	-docker-compose \
@@ -23,7 +23,7 @@ test:
 	  	-v ${PWD}:/app \
 	  	tests
 
-initegration-test:
+integration-test:
 	-docker-compose \
 		-f docker-compose-integration.yml \
 	  run --rm \

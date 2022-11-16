@@ -2,10 +2,10 @@
 
 load '/usr/local/lib/bats/load.bash'
 
-# export SSH_AGENT_STUB_DEBUG=/dev/tty
-# export SSH_ADD_STUB_DEBUG=/dev/tty
-# export VAULT_STUB_DEBUG=/dev/tty
-# export GIT_STUB_DEBUG=/dev/tty
+export SSH_AGENT_STUB_DEBUG=/dev/tty
+export SSH_ADD_STUB_DEBUG=/dev/tty
+export VAULT_STUB_DEBUG=/dev/tty
+export GIT_STUB_DEBUG=/dev/tty
 
 @test "test auth token option" {
   export BUILDKITE_PLUGIN_VAULT_SECRETS_PATH=foobar

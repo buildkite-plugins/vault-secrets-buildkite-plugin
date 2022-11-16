@@ -7,7 +7,7 @@ services:
 
   lint:
     image: buildkite/plugin-linter
-    command: ['--id', 'mikeknox/vault-secrets']
+    command: ['--id', 'vault-secrets']
     volumes:
       - ".:/plugin"
 
