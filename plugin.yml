@@ -22,11 +22,9 @@ configuration:
           type: string
         aws-role-name:
           type: string
-        
   required:
     - server
     - auth
   additionalProperties: false
   dependencies:
     auth: [ method ]
-
