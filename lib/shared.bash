@@ -48,7 +48,7 @@ vault_auth() {
     return "${PIPESTATUS[0]}"
   fi
 
-  # aws authenticatino 
+  # aws authentication
   if [ "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" = "aws" ]; then
     
     # get the name of the IAM role the EC2 instance is using, if any 

@@ -28,3 +28,4 @@ configuration:
   additionalProperties: false
   dependencies:
     auth: [ method ]
+
