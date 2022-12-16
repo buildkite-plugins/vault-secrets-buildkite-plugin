@@ -16,8 +16,11 @@ configuration:
         method:
           enum:
             - 'approle'
+            - 'aws'
             - ''
         role-id:
+          type: string
+        aws-role-name:
           type: string
   required:
     - server
@@ -25,4 +28,3 @@ configuration:
   additionalProperties: false
   dependencies:
     auth: [ method ]
-

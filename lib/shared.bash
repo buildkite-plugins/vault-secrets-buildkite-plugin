@@ -47,6 +47,33 @@ vault_auth() {
 
     return "${PIPESTATUS[0]}"
   fi
+
+  # aws authenticatino 
+  if [ "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" = "aws" ]; then
+    
+    # get the name of the IAM role the EC2 instance is using, if any 
+    EC2_INSTANCE_IAM_ROLE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials)
+
+    # set the role name to use; either from the plugin configuration, or fall back to the EC2 instance role
+    aws_role_name="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME:-$EC2_INSTANCE_IAM_ROLE}"
+
+    if [[ -z "${!aws_role_name:-}" ]]; then
+      echo "+++  🚨 No EC2 instance IAM role found in \$${aws_role_name}"
+      exit 1
+    fi
+    
+    # export the vault token to be used for this job - this is a standard vault auth command 
+    # on success, vault will return the token which we export as VAULT_TOKEN for this shell
+    if ! VAULT_TOKEN=$(vault login -method=aws role="$aws_role_name" -address="$server"); then
+      echo "Failed to get vault token"
+    fi
+
+    export VAULT_TOKEN
+
+    echo "Successfully authenticated with RoleID ${aws_role_name} and updated vault token"
+
+    return "${PIPESTATUS[0]}"
+  fi
 }
 
 list_secrets() {
