@@ -64,7 +64,7 @@ vault_auth() {
     
     # export the vault token to be used for this job - this is a standard vault auth command 
     # on success, vault will return the token which we export as VAULT_TOKEN for this shell
-    if ! VAULT_TOKEN=$(vault login -method=aws role="$aws_role_name" -address="$server"); then
+    if ! VAULT_TOKEN=$(vault login -address="$server" -method=aws role="$aws_role_name"); then
       echo "Failed to get vault token"
     fi
 
