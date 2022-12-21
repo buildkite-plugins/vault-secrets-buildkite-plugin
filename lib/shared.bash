@@ -57,7 +57,7 @@ vault_auth() {
     # set the role name to use; either from the plugin configuration, or fall back to the EC2 instance role
     aws_role_name="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME:-$EC2_INSTANCE_IAM_ROLE}"
 
-    if [[ -z "${!aws_role_name:-}" ]]; then
+    if [[ -z "${aws_role_name:-}" ]]; then
       echo "+++  🚨 No EC2 instance IAM role found in \$${aws_role_name}"
       exit 1
     fi
