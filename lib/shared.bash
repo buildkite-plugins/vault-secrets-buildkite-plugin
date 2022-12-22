@@ -12,19 +12,17 @@ esac
 vault_auth() {
   local server="$1"
 
-  # Currently we only support AppRole authentication.
   # These values are referenced when authenticating to the Vault server:
-  #   BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD - approle
+  #   BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD - 'approle' or 'aws'
 
+   # approle authentication
+  if [ "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" = "approle" ]; then
   #   RoleID and SecretID should be stored securely on the agent, there are probably better ways to do this, but here is a start
   #   We'll use these two values for the RoleID and SecretID:
   #     BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ID
   #     BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID
   #
   #   For now, you will need to define the secret ID oustide of the plugin, though this will probably change.
-
-   # approle authentication
-  if [ "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" = "approle" ]; then
     
     secret_var="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV:-VAULT_SECRET_ID}"
 
@@ -50,15 +48,18 @@ vault_auth() {
 
   # aws authentication
   if [ "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" = "aws" ]; then
+    # AWS auth method only requires you to pass the name of a valid Vault role in your login call, which is not
+    # sensitive information itself, so the role name to use can either be passed via BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME
+    # or will fall back to using the name of the IAM role that the instance is using. 
     
     # get the name of the IAM role the EC2 instance is using, if any 
-    EC2_INSTANCE_IAM_ROLE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials)
+    EC2_INSTANCE_IAM_ROLE=$(curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials)
 
-    # set the role name to use; either from the plugin configuration, or fall back to the EC2 instance role
+    # set the role name to use
     aws_role_name="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME:-$EC2_INSTANCE_IAM_ROLE}"
 
     if [[ -z "${aws_role_name:-}" ]]; then
-      echo "+++  🚨 No EC2 instance IAM role found in \$${aws_role_name}"
+      echo "+++  🚨 No EC2 instance IAM role defined"
       exit 1
     fi
     
