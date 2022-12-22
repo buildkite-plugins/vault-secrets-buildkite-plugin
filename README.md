@@ -13,9 +13,46 @@ Different types of secrets are supported and exposed to your builds in appropria
 - Environment Variables for strings
 - `git-credential` via git's credential.helper
 
-The plugin supports both [approle](https://developer.hashicorp.com/vault/docs/auth/approle) and [aws](https://developer.hashicorp.com/vault/docs/auth/aws#authentication) Vault auth methods.
+The plugin supports both [approle](https://developer.hashicorp.com/vault/docs/auth/approle) and [aws](https://developer.hashicorp.com/vault/docs/auth/aws) Vault auth methods.
 
-## ENV example (approle authentication)
+## Plugin configuration options
+<table>
+<thead>
+  <tr>
+    <th>Option</th>
+    <th>Description</th>
+    <th>Required</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><pre>server</pre></td>
+    <td>The URL of the Vault server you wish to use</td>
+    <td>✅</td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <td><pre>auth:<br>&nbsp;method:</pre></td>
+    <td>The type of auth method to use, either <code>approle</code> or <code>aws</code></td>
+    <td>✅</td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <td><pre>auth:<br>&nbsp;role-id:</pre></td>
+    <td>If using the <code>approle</code> method, the Vault role ID to use</td>
+    <td>When using <code>approle</code> auth</td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <td><pre>auth:<br>&nbsp;aws-role-name:</pre></td>
+    <td>If using the <code>aws</code> method, the Vault role name to use.  Defaults to the IAM role used by the EC2 instance</td>
+    <td>When using <code>aws</code> auth</td>
+  </tr>
+</tbody>
+</table>
+
+
+## ENV example
 
 The following pipeline downloads env secrets stored in `https://my-vault-server/secret/buildkite/{pipeline}/env` and git-credentials from `https://my-vault-server/secret/buildkite/{pipeline}/git-credentials`
 
