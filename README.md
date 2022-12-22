@@ -13,12 +13,15 @@ Different types of secrets are supported and exposed to your builds in appropria
 - Environment Variables for strings
 - `git-credential` via git's credential.helper
 
-## ENV example
+The plugin supports both [approle](https://developer.hashicorp.com/vault/docs/auth/approle) and [aws](https://developer.hashicorp.com/vault/docs/auth/aws#authentication) Vault auth methods.
+
+## ENV example (approle authentication)
 
 The following pipeline downloads env secrets stored in `https://my-vault-server/secret/buildkite/{pipeline}/env` and git-credentials from `https://my-vault-server/secret/buildkite/{pipeline}/git-credentials`
 
 The keys in the `env` secret are exposed in the `checkout` and `command` as environment variables. The git-credentials are exposed as an environment variable `GIT_CONFIG_PARAMETERS` and are also exposed in the `checkout` and `command`.
 
+Approle authentication:
 ```yml
 steps:
   - command: ./run_build.sh
@@ -32,6 +35,18 @@ steps:
             secret-env: "VAULT_SECRET_ID"
 ```
 
+AWS authentication:
+```yml
+steps:
+  - command: ./run_build.sh
+    plugins:
+      - vault-secrets#v0.2.0:
+          server: "https://my-vault-server"
+          path: secret/buildkite
+          auth:
+            method: aws
+            aws-role-name: "my-role-name"
+```
 
 ## Uploading Secrets
 
