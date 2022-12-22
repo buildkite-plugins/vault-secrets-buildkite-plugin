@@ -52,8 +52,11 @@ vault_auth() {
     # sensitive information itself, so the role name to use can either be passed via BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME
     # or will fall back to using the name of the IAM role that the instance is using. 
     
+    # check whether instance is running on EC2
+    RUNNING_ON_EC2=$( aws_platform_check )
+
     # get the name of the IAM role the EC2 instance is using, if any 
-    EC2_INSTANCE_IAM_ROLE=$(curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials)
+    EC2_INSTANCE_IAM_ROLE=$( [ "$RUNNING_ON_EC2" = true ]; curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials )
 
     # set the role name to use
     aws_role_name="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME:-$EC2_INSTANCE_IAM_ROLE}"
@@ -145,4 +148,21 @@ add_ssh_private_key_to_agent() {
 
 grep_secrets() {
   grep -E 'private_ssh_key|id_rsa_github|env|environment|git-credentials$' "$@"
+}
+
+aws_platform_check() {
+    if [ -f /sys/hypervisor/uuid ]; then
+      if [ "$(head -c 3 /sys/hypervisor/uuid)" == "ec2" ]; then
+        return 0
+      else
+        return 1
+      fi
+
+    elif [ -r /sys/devices/virtual/dmi/id/product_uuid ]; then
+      if [ "$(head -c 3 /sys/devices/virtual/dmi/id/product_uuid)" == "EC2" ]; then
+        return 0
+      else
+        return 1
+      fi
+    fi
 }
