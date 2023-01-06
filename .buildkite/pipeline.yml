@@ -17,18 +17,18 @@ steps:
           run: tests
           
   - label: ":vault: :test_tube: Integration Tests"
-    command:  /app/.buildkite/steps/test_envvar.sh
+    command: bash /app/.buildkite/steps/test_envvar.sh
     plugins:
       docker-compose#v4.5.0:
         config:
           - docker-compose-integration.yml
         run: vault-tester
         env:
-          - VAULT_ADDR=\${VAULT_ADDR}
-          - BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=\${VAULT_ADDR}
-          - BUILDKITE_PIPELINE_SLUG=\${BUILDKITE_PIPELINE_SLUG}
-          - BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=\${DUMP_ENV}
-          - VAULT_DEV_ROOT_TOKEN_ID=\${VAULT_DEV_ROOT_TOKEN_ID}
-          - BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_TOKEN=\${VAULT_DEV_ROOT_TOKEN_ID}
-          - SVC_VAULT_VERSION=\${SVC_VAULT_VERSION}
-          - TESTER_VAULT_VERSION=\${TESTER_VAULT_VERSION}
+          - VAULT_ADDR
+          - BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=${VAULT_ADDR}
+          - BUILDKITE_PIPELINE_SLUG
+          - BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=${DUMP_ENV}
+          - VAULT_DEV_ROOT_TOKEN_ID
+          - BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_TOKEN=${VAULT_DEV_ROOT_TOKEN_ID}
+          - SVC_VAULT_VERSION
+          - TESTER_VAULT_VERSION
