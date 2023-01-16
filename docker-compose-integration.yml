@@ -2,14 +2,13 @@ version: '2.3'
 services:
   vault-svc:
     image: "vault:${SVC_VAULT_VERSION:-1.12.1}"
+    healthcheck:
+      test: wget http://127.0.0.1:8200/v1/sys/health
+      interval: 2s
+      timeout: 10s
+      retries: 5
     cap_add:
     - IPC_LOCK
-    # healthcheck:
-    #   #  test: ["CMD", "vault", "status"]
-    #    test: ["CMD", "curl", "-f", "http://localhost:8200"]
-    #    interval: 2s
-    #    timeout: 3s
-    #    retries: 10
     environment:
       - VAULT_DEV_ROOT_TOKEN_ID=${VAULT_DEV_ROOT_TOKEN_ID}
       - VAULT_TOKEN=${VAULT_DEV_ROOT_TOKEN_ID}
@@ -17,13 +16,12 @@ services:
       - VAULT_ADDR="http://0.0.0.0:8200"
   vault-tester:
     build: ./
-    # image: "mikeknox/vault-tester:${TESTER_VAULT_VERSION:-0.10.0}"
     image: "vault-tester"
     links:
       - vault-svc
     depends_on:
-      - vault-svc
-        # condition: service_healthy
+      vault-svc:
+        condition: service_healthy
     volumes:
       - .:/app
     cap_add:
@@ -37,5 +35,5 @@ services:
       - BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_TOKEN
     entrypoint:
       - ""
-    # command:
-    #   - /app/.buildkite/steps/test_envvar.sh
+    command:
+       bash /app/.buildkite/steps/test_envvar.sh
