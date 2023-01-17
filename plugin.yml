@@ -27,7 +27,5 @@ configuration:
       type: array
   additionalProperties: false
   required: [ auth ]
-  dependencies:
-    method: [ role-id ]
     
 
