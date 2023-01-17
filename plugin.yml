@@ -8,6 +8,8 @@ requirements:
   - vault
 configuration:
   properties:
+    path:
+      type: string
     server:
       type: string
     auth:
@@ -19,7 +21,13 @@ configuration:
             - ''
         role-id:
           type: string
-  required:
-    - server
-    - auth
+        secret-env:
+          type: string
+    secrets:
+      type: array
+  additionalProperties: false
+  required: [ auth ]
+  dependencies:
+    method: [ role-id ]
+    
 

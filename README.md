@@ -27,7 +27,7 @@ steps:
           server: "https://my-vault-server"
           path: secret/buildkite
           auth:
-            method: approle
+            method: "approle"
             role-id: "my-role-id"
             secret-env: "VAULT_SECRET_ID"
 ```
@@ -140,6 +140,8 @@ steps:
           server: my-vault-server
           auth:
             method: 'approle'
+            role-id: 'my-role-id'
+            secret-env: 'VAULT_SECRET_ID'
           secrets:
           - key
 ```
