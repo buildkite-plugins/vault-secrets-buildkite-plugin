@@ -20,7 +20,7 @@ steps:
         run: vault-tester
         workdir: /app
         env:
-          - VAULT_ADDR=${VAULT_ADDR}
+          - VAULT_ADDR
           - BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=${VAULT_ADDR}
           - BUILDKITE_PIPELINE_SLUG="my_pipeline"
           - BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV="true"
