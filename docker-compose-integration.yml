@@ -36,4 +36,4 @@ services:
     entrypoint:
       - ""
     command:
-       bash /app/.buildkite/steps/test_envvar.sh
+      /app/.buildkite/steps/test_envvar.sh
