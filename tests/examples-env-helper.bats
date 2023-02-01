@@ -9,7 +9,6 @@ load '/usr/local/lib/bats/load.bash'
 
 #-------
 @test "Add environment secret var to project using example helper" {
-  skip
   export VAULT_ADDR=https://vault_svr_url
   export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA=`echo MY_SECRET=fooblah | base64`
@@ -30,7 +29,6 @@ load '/usr/local/lib/bats/load.bash'
 }
 
 @test "Add environment secret var to project using example helper via stdin" {
-  skip
   export VAULT_ADDR=https://vault_svr_url
   export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA=`echo MY_SECRET=fooblah | base64`

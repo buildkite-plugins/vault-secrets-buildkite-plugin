@@ -10,7 +10,6 @@ load '/usr/local/lib/bats/load.bash'
 
 #-------
 @test "Add sshkey secret var to project using example helper" {
-  skip
   export VAULT_ADDR=https://vault_svr_url
   export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA=`echo MY_SECRET=fooblah | base64`
@@ -38,7 +37,6 @@ load '/usr/local/lib/bats/load.bash'
 }
 
 @test "Adding sshkey secret var to default will fail using example helper" {
-  skip
   export VAULT_ADDR=https://vault_svr_url
 
   run bash -c "$PWD/examples/update-sshkey-secret"

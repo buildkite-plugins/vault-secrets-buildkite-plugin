@@ -18,23 +18,16 @@ load '/usr/local/lib/bats/load.bash'
   export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD=approle
 
   stub vault \
-    "write -field=token -address=https://vault_svr_url auth/approle/login role_id=buildkite secret_id=abcde12345 : echo 'secretid'"  \
+    "write -field=token -address=https://vault_svr_url auth/approle/login role_id=buildkite secret_id=abcde12345 : echo 'Successfully authenticated with Role ID ${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID}'"  \
     "kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml foobar : exit 0"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
   
   assert_success
-  # assert_output --partial 'Successfully authenticated with RoleID'
+  assert_output --partial 'Successfully authenticated with RoleID'
 
-  unset BUILDKITE_PLUGIN_VAULT_SECRETS_PATH
-  unset BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER
-  unset BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV
-  unset BUILDKITE_PIPELINE_SLUG
-  unset BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV
-  unset BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID
-  unset BUILDKITE_PLUGIN _VAULT_SECRETS_AUTH_SECRET_ID
-  unset BUILKDITE_PLGUIN_VAULT_SECRETS_AUTH_METHOD
+  unstub vault
 }
 
 @test "test auth token option" {
@@ -65,7 +58,7 @@ load '/usr/local/lib/bats/load.bash'
 }
 
 @test "test aws auth method" {
-  skip "no option to do this yet"
+  skip "This is not available as an option yet, but will work in a future update"
   export BUILDKITE_PLUGIN_VAULT_SECRETS_PATH=foobar
   export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
   export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=false
