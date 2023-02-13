@@ -1,12 +1,6 @@
 #!/bin/bash
 set -ueo pipefail
 
-# BASE64_DECODE_ARGS="-d"
-
-# case "$(uname -s)" in
-#   Darwin) BASE64_DECODE_ARGS="--decode" ;;
-# esac
-
 [ -z "${TMPDIR:-}" ] && TMPDIR=${TMPDIR:-/tmp}
 
 vault_auth() {
