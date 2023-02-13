@@ -36,7 +36,6 @@ runTest() {
   fi
 }
 
-# cmd="$0"
 configEnv
 if [ -d /app ]; then
   echo "--- setup test data"
