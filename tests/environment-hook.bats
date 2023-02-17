@@ -19,7 +19,7 @@ load '/usr/local/lib/bats/load.bash'
   export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD=approle
 
   stub vault \
-    "write -field=token -address=https://vault_svr_url auth/approle/login role_id=buildkite secret_id=\"${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV}\" : echo 'Successfully authenticated with Role ID ${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID}'" \
+    "write -field=token \* auth/approle/login \* \* : echo 'Successfully authenticated with \${5} \${6}" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo 'env'" \
     "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/env : echo ${TESTDATA}"
