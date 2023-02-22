@@ -14,7 +14,7 @@ steps:
           id: vault-secrets
   - label: ":test_tube: Tests"
     plugins:
-      - docker-compose#v4.5.0:
+      - docker-compose#v4.9.0:
           run: tests
           
   - label: ":vault: :test_tube: Integration Tests"
