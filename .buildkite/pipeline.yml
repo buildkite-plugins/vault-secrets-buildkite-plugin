@@ -10,7 +10,7 @@ steps:
             - hooks/*
   - label: "Linter"
     plugins:
-      - plugin-linter#v2.0.0:
+      - plugin-linter#v3.0.0:
           id: vault-secrets
   - label: ":test_tube: Tests"
     plugins:
