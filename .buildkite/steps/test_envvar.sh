@@ -3,14 +3,11 @@
 set -eu
 
 configEnv() {
-  _source="$0"
-  [ -z "${_source:-}" ] && _source="${0}"
-  basedir="$( cd "$( dirname "${_source}" )" && cd ../.. && pwd )"
+  basedir="$( cd "$( dirname "$0" )" && cd ../.. && pwd )"
 }
 
 setupTestData() {
-  export VAULT_TOKEN="${VAULT_DEV_ROOT_TOKEN_ID:-}"
-  sh "${basedir}/.buildkite/steps/vault-init-tester.sh"
+  . "${basedir}/.buildkite/steps/vault-init-tester.sh"
 }
 
 runTest() {
@@ -21,14 +18,14 @@ runTest() {
   . "${basedir}"/hooks/environment
 
 
-  if [[ -n "${TESTDATA_1:-}" ]] && [[ "${TESTDATA_1}" == "foobar1" ]] ; then
+  if [ "${TESTDATA_1:-}" == "foobar1" ] ; then
     echo "TESTDATA_1 is correct"
   else
     echo "TESTDATA_1 is not set and/or correct"
     exit 1
   fi
 
-  if [[ ! -z "${TESTDATA_2:-}" ]] && [[ "${TESTDATA_2}" == "foobar2" ]] ; then
+  if [ "${TESTDATA_2:-}" == "foobar2" ] ; then
     echo "TESTDATA_2 is correct"
   else
     echo "TESTDATA_2 is not set and/or correct"

@@ -12,13 +12,12 @@ load '/usr/local/lib/bats/load.bash'
   export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
   export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=false
   export BUILDKITE_PIPELINE_SLUG=testpipe
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV=abcde12345
   export VAULT_SECRET_ID=abcde12345
   export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID=buildkite
   export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD=approle
 
   stub vault \
-    "write -field=token -address=https://vault_svr_url auth/approle/login role_id=buildkite secret_id=abcde12345 : echo 'Successfully authenticated with Role ID ${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID}'"  \
+    "write -field=token -address=https://vault_svr_url auth/approle/login role_id=buildkite secret_id=abcde12345 : echo 'Successfully authenticated with Role ID ${6}'"  \
     "kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml foobar : exit 0"
 

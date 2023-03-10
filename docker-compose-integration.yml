@@ -12,7 +12,7 @@ services:
     environment:
       - VAULT_DEV_ROOT_TOKEN_ID=${VAULT_DEV_ROOT_TOKEN_ID}
       - VAULT_TOKEN=${VAULT_DEV_ROOT_TOKEN_ID}
-      - VPC_PROXY=${VPC_PROXY:-}
+      - VPC_PROXY
       - VAULT_ADDR="http://0.0.0.0:8200"
   vault-tester:
     build: ./
@@ -28,8 +28,8 @@ services:
       - IPC_LOCK
     environment:
       - VAULT_DEV_ROOT_TOKEN_ID
-      - VAULT_ADDR=${VAULT_ADDR:-}
-      - VPC_PROXY=${VPC_PROXY:-}
+      - VAULT_ADDR
+      - VPC_PROXY
       - BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER
       - BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
       - BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_TOKEN

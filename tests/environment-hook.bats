@@ -14,12 +14,8 @@ load '/usr/local/lib/bats/load.bash'
   export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
   export TESTDATA='MY_SECRET=fooblah'
   export BUILDKITE_PIPELINE_SLUG=testpipe
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV="abcde12345"
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID=buildkite
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD=approle
 
   stub vault \
-    "write -field=token \* auth/approle/login \* \* : echo 'Successfully authenticated with \${5} \${6}" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo 'env'" \
     "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/env : echo ${TESTDATA}"
@@ -38,12 +34,8 @@ load '/usr/local/lib/bats/load.bash'
   export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
   export TESTDATA='MY_SECRET=fooblah'
   export BUILDKITE_PIPELINE_SLUG=testpipe
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV="abcde12345"
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID=buildkite
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD=approle
 
   stub vault \
-    "write -field=token \* auth/approle/login \* \* : echo 'Successfully authenticated with \${5} \${6}" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo 'environment'" \
     "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/environment : echo ${TESTDATA}"
@@ -63,14 +55,10 @@ load '/usr/local/lib/bats/load.bash'
   export TESTDATA_ENV1='MY_SECRET=fooblah'
   export TESTDATA_ENV2='ANOTHER_SECRET=baa'
   export BUILDKITE_PIPELINE_SLUG=testpipe
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV="abcde12345"
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID=buildkite
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD=approle
 
 
 
   stub vault \
-    "write -field=token \* auth/approle/login \* \* : echo 'Successfully authenticated with \${5} \${6}" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo 'env environment'" \
     "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/env : echo ${TESTDATA_ENV1}" \

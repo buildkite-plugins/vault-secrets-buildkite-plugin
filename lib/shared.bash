@@ -19,8 +19,14 @@ vault_auth() {
 
    # approle authentication
   if [ "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" = "approle" ]; then
-    
-    secret_var="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV:-VAULT_SECRET_ID}"
+
+    if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV:-}" ]; then
+      secret_var="${VAULT_SECRET_ID?No Secret ID found}"
+    else
+      secret_var="${!BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV}"
+    fi
+
+    echo "$secret_var"
 
     if [[ -z "${secret_var:-}" ]]; then
       echo "+++  🚨 No vault secret id found"
@@ -32,7 +38,8 @@ vault_auth() {
     if ! VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
      role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID" \
      secret_id="${secret_var:-}"); then
-      echo "Failed to get vault token"
+      echo "+++🚨 Failed to get vault token"
+      exit 1
     fi
 
     export VAULT_TOKEN
