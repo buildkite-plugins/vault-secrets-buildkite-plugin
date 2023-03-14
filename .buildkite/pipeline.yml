@@ -8,19 +8,21 @@ steps:
           files: 
             - lib/*.bash
             - hooks/*
+
   - label: "Linter"
     plugins:
-      - plugin-linter#v3.0.0:
+      - plugin-linter#v3.1.0:
           id: vault-secrets
+
   - label: ":test_tube: Tests"
     plugins:
-      - docker-compose#v4.9.0:
+      - docker-compose#v4.11.0:
           run: tests
           
   - label: ":vault: :test_tube: Integration Tests"
-    command: bash .buildkite/steps/test_envvar.sh
+    command: .buildkite/steps/test_envvar.sh
     plugins:
-      docker-compose#v4.5.0:
+      docker-compose#v4.11.0:
         config:
           - docker-compose-integration.yml
         run: vault-tester

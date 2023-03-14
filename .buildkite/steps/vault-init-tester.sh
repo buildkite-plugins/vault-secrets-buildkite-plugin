@@ -3,7 +3,7 @@
 # This token is defined in docker-compose.yml and is for testing ONLY!!!!!!
 AUTH_TOKEN="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_TOKEN:-}"
 PROJECT=${BUILDKITE_PIPELINE_SLUG:-foobar_project}
-export VAULT_ADDR="http://vault-svc:8200"
+: "${VAULT_ADDR?Variable VAULT_ADDR needs to be defined}"
 
 
 if [ ! "$(vault login token="$AUTH_TOKEN")" ]; then
