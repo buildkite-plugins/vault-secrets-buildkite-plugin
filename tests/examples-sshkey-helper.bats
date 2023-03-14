@@ -3,7 +3,7 @@
 load '/usr/local/lib/bats/load.bash'
 
 # export SSH_AGENT_STUB_DEBUG=/dev/tty
-# export SSH_KEYGEN_STUB_DEBUG=/dev/tty
+#  export SSH_KEYGEN_STUB_DEBUG=/dev/tty
 # export SSH_ADD_STUB_DEBUG=/dev/tty
 # export VAULT_STUB_DEBUG=/dev/tty
 # export GIT_STUB_DEBUG=/dev/tty
@@ -15,7 +15,7 @@ load '/usr/local/lib/bats/load.bash'
   export TESTDATA=`echo MY_SECRET=fooblah | base64`
 
   stub ssh-keygen \
-    "-f ./private_ssh_key -N : touch private_ssh_key ; touch private_ssh_key.pub"
+    "-f ./private_ssh_key -N * : touch private_ssh_key ; touch private_ssh_key.pub"
   # Due to the anonyances of escaping variables etc ...
   # ssh-keygen is actually run with -N '', but that doesn't play nice with the stub so we ignore it
 
@@ -30,10 +30,6 @@ load '/usr/local/lib/bats/load.bash'
 
   unstub ssh-keygen
   unstub vault
-
-  unset TESTDATA
-  unset BUILDKITE_PIPELINE_SLUG
-  unset VAULT_ADDR
 }
 
 @test "Adding sshkey secret var to default will fail using example helper" {

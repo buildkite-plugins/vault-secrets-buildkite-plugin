@@ -1,0 +1,36 @@
+env:
+  VAULT_ADDR: "http://vault-svc:8200"
+  VAULT_DEV_ROOT_TOKEN_ID: "88F4384B-98E9-4AE3-B00C-F55678F89080"
+steps:
+  - label: "Shellcheck"
+    plugins:
+      - shellcheck#v1.3.0:
+          files: 
+            - lib/*.bash
+            - hooks/*
+
+  - label: "Linter"
+    plugins:
+      - plugin-linter#v3.1.0:
+          id: vault-secrets
+
+  - label: ":test_tube: Tests"
+    plugins:
+      - docker-compose#v4.11.0:
+          run: tests
+          
+  - label: ":vault: :test_tube: Integration Tests"
+    command: .buildkite/steps/test_envvar.sh
+    plugins:
+      docker-compose#v4.11.0:
+        config:
+          - docker-compose-integration.yml
+        run: vault-tester
+        workdir: /app
+        env:
+          - VAULT_ADDR
+          - BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=${VAULT_ADDR}
+          - BUILDKITE_PIPELINE_SLUG="my_pipeline"
+          - BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV="true"
+          - VAULT_DEV_ROOT_TOKEN_ID
+          - BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_TOKEN=${VAULT_DEV_ROOT_TOKEN_ID}

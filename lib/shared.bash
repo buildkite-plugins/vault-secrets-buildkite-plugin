@@ -1,12 +1,6 @@
 #!/bin/bash
 set -ueo pipefail
 
-BASE64_DECODE_ARGS="-d"
-
-case "$(uname -s)" in
-  Darwin) BASE64_DECODE_ARGS="--decode" ;;
-esac
-
 [ -z "${TMPDIR:-}" ] && TMPDIR=${TMPDIR:-/tmp}
 
 vault_auth() {
@@ -18,18 +12,24 @@ vault_auth() {
 
   #   RoleID and SecretID should be stored securely on the agent, there are probably better ways to do this, but here is a start
   #   We'll use these two values for the RoleID and SecretID:
-  #     BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ID
+  #     BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV
   #     BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID
   #
   #   For now, you will need to define the secret ID oustide of the plugin, though this will probably change.
 
    # approle authentication
   if [ "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" = "approle" ]; then
-    
-    secret_var="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV:-VAULT_SECRET_ID}"
 
-    if [[ -z "${!secret_var:-}" ]]; then
-      echo "+++  🚨 No vault secret id found in \$${secret_var}"
+    if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV:-}" ]; then
+      secret_var="${VAULT_SECRET_ID?No Secret ID found}"
+    else
+      secret_var="${!BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV}"
+    fi
+
+    echo "$secret_var"
+
+    if [[ -z "${secret_var:-}" ]]; then
+      echo "+++  🚨 No vault secret id found"
       exit 1
     fi
     
@@ -37,8 +37,9 @@ vault_auth() {
     # on success, vault will return the token which we export as VAULT_TOKEN for this shell
     if ! VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
      role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID" \
-     secret_id="${!secret_var:-}"); then
-      echo "Failed to get vault token"
+     secret_id="${secret_var:-}"); then
+      echo "+++🚨 Failed to get vault token"
+      exit 1
     fi
 
     export VAULT_TOKEN

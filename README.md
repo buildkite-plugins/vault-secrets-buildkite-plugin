@@ -23,11 +23,11 @@ The keys in the `env` secret are exposed in the `checkout` and `command` as envi
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v0.2.0:
+      - vault-secrets#v0.2.2:
           server: "https://my-vault-server"
           path: secret/buildkite
           auth:
-            method: approle
+            method: "approle"
             role-id: "my-role-id"
             secret-env: "VAULT_SECRET_ID"
 ```
@@ -136,8 +136,12 @@ Can be loaded using:
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v0.1.0:
+      - vault-secrets#v0.2.2:
           server: my-vault-server
+          auth:
+            method: 'approle'
+            role-id: 'my-role-id'
+            secret-env: 'VAULT_SECRET_ID'
           secrets:
           - key
 ```
@@ -181,7 +185,7 @@ When writing test plans, note that secrets are processed in the order they appea
 - Merge compose files together
 
 ## Acknowledgements
-A huge thank you to the original author [@mikeknox](https://github.com/mikeknox) for providing the framework for this plugin
+A special thank you to the original author [@mikeknox](https://github.com/mikeknox) for providing the framework for this plugin
 
 
 ## License
