@@ -1,10 +1,5 @@
 # Vault Secrets Buildkite Plugins
 
-__This plugin was originally based on the the *AWS S3 Secrets Buildkite Plugin*__
-
-__All secrets are base64 encoded in Vault__
-It currently runs on an AWS based Buildkite stack, but it should work on any agent.
-
 Expose secrets to your build steps. Secrets are stored encrypted-at-rest in HashiCorp Vault.
 
 Different types of secrets are supported and exposed to your builds in appropriate ways:
@@ -13,9 +8,9 @@ Different types of secrets are supported and exposed to your builds in appropria
 - Environment Variables for strings
 - `git-credential` via git's credential.helper
 
-## ENV example
+## Example Usage
 
-The following pipeline downloads env secrets stored in `https://my-vault-server/secret/buildkite/{pipeline}/env` and git-credentials from `https://my-vault-server/secret/buildkite/{pipeline}/git-credentials`
+The following pipeline uses AppRole authentication to authenticate to the Vault server, and downloads env secrets stored in `https://my-vault-server/secret/buildkite/{pipeline}/env` and git-credentials from `https://my-vault-server/secret/buildkite/{pipeline}/git-credentials`.
 
 The keys in the `env` secret are exposed in the `checkout` and `command` as environment variables. The git-credentials are exposed as an environment variable `GIT_CONFIG_PARAMETERS` and are also exposed in the `checkout` and `command`.
 
@@ -35,7 +30,17 @@ steps:
 
 ## Uploading Secrets
 
-Secrets are uploading using the Vault CLI, as a `base64` encoded blob in a field called *value*.
+Secrets are downloaded by the plugin by matching the following keys
+
+```text
+env
+environment
+private_ssh_key
+id_rsa_github
+git-credentials
+```
+
+Secrets can be uploaded to the Vault CLI, in a field called *value*
 
 ```sh
 echo -n $(cat private_ssh_key | base64) | vault write  data/buildkite/test-pipeline/private_ssh_key \
@@ -44,7 +49,7 @@ echo -n $(cat private_ssh_key | base64) | vault write  data/buildkite/test-pipel
 
 `examples/` has 2 sample helper script for adding environment variables or ssh keys to Vault for a pipeline.
 
-### Environment secrets
+### Environment Secrets
 
 Environment variable secrets are handled differently in this Vault plugin to the S3 plugin.
 
@@ -54,9 +59,9 @@ project foo/env/var1
 project foo/env/var2
 etc
 
-### Policies
+### Vault Policies
 
-- Create policies to manage who can read and update pipeline secrets
+Create policies to manage who can read and update pipeline secrets
 
 The plugin needs at least *read* and *list* capabilities for the data.
 A sample read policy, this could be used by agents.
@@ -88,6 +93,18 @@ path "data/buildkite/private_ssh_key" {
     capabilities = ["deny"]
 }
 ```
+### Environment Variables
+
+Key values pairs can also be uploaded.
+
+```bash
+vault kv put data/buildkite/my_pipeline/environment value=- <<< $(echo "MY_SECRET=blah" | base64)
+```
+
+```bash
+vault kv put data/buildkite/my_pipeline/env_key value=- <<< $(echo "my secret")
+```
+
 
 ### SSH Keys
 
@@ -103,7 +120,7 @@ echo -n $(cat id_rsa_buildkite | base64) | vault write data/buildkite/my_pipelin
     value=-
 ```
 
-### Git credentials
+### Git Credentials
 
 For git over https, you can use a `git-credentials` file with credential urls in the format of:
 
@@ -118,71 +135,79 @@ vault write data/buildkite/my_pipeline/git-credentials value=- <<< $(echo "https
 These are then exposed via a [gitcredential helper](https://git-scm.com/docs/gitcredentials) which will download the
 credentials as needed.
 
-### Environment variables
+## Options
+***
+The Vault Secrets plugin supports a number of different configuration options.
 
-Key values pairs can also be uploaded.
+### `server`
+The address of the target Vault server. Example: `https://my-vault-server:8200`
 
-```bash
-vault write data/buildkite/my_pipeline/environment value=- <<< $(echo "MY_SECRET=blah" | base64)
-```
+### `path`
+Alternative Base Path to use for Vault secrets. This is expected to be a [KV Store](https://developer.hashicorp.com/vault/docs/secrets/kv#kv-version-2)  
 
-```bash
-vault write data/buildkite/my_pipeline/env_key value=- <<< $(echo "my secret"| base64)
-```
+Defaults to: `data/buildkite`
 
-Can be loaded using:
+
+### `auth`
+Configure the authentication parameters the plugin should use to authenticate with Vault.
+
+`auth` accepts the following options:
+
+`method` (required)
+The auth method to use when authenticating with Vault. Currently only `approle` is supported
+
+`approle`
+Configures the plugin to use AppRole authentication to the Vault server. Requires a `role-id` be set.
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`role-id` (required)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The role-id the plugin should use to authenticate to Vault
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`secret-env`
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The environment variable which holds the **secret-id** used to authenticate to vault. Default `VAULT_SECRET_ID`
+
+
+
+Example:
 
 ```yaml
 steps:
   - command: ./run_build.sh
     plugins:
       - vault-secrets#v0.2.2:
-          server: my-vault-server
+          server: https://my-vault-server
           auth:
             method: 'approle'
             role-id: 'my-role-id'
-            secret-env: 'VAULT_SECRET_ID'
-          secrets:
-          - key
+            secret-env: 'MY_SECRET_ENV'
 ```
-
-## Options
-
-### `path`
-
-defaults to: `data/buildkite`
-This is expected to be a kv store
-
-Alternative Base Path to use for Vault secrets
 
 ## Testing
-
-To run locally:
-
+---
+### Unit tests
+The unit tests are written using BATS, you can test locally with:
 ```bash
-BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true BUILDKITE_PLUGIN_VAULT_SECRETS_ADDR=http://0.0.0.0:8200 BUILDKITE_PIPELINE_SLUG=my_pipeline hooks/environment
+make test
 ```
-
-To test with BATS:
-
+or using docker-compose:
 ```bash
 docker-compose -f docker-compose.yml run --rm tests
 ```
 
-Integration test:
+### Integration test
+
+The integration tests are run by spinning up a local vault container in dev mode, and configuring them with some data.
 
 ```bash
-.buildkite/steps/test_envvar.sh
+make integration-test
 ```
 
 When writing test plans, note that secrets are processed in the order they appear in the list returned from the Vault.
 
-## TODO
+### Testing the pipeline
+You can test the pipeline locally using the `bk cli`
 
-- Document use of `TESTER_VAULT_VERSION` version to set Vault version on tester service
-- Add `SVC_VAULT_VERSION` to specify version of Vault service
-- Document use of Makefile
-- Merge compose files together
+```bash
+bk local run -E BUILDKITE_PLUGIN_DOCKER_COMPOSE_RUN_LABELS=false
+```
 
 ## Acknowledgements
 A special thank you to the original author [@mikeknox](https://github.com/mikeknox) for providing the framework for this plugin
