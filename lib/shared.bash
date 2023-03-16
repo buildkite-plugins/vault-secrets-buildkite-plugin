@@ -93,7 +93,6 @@ secret_download() {
   local server="$1"
   local key="$2"
   if ! _secret=$(vault kv get -address="$server" -field=data -format=yaml "$key" | sed -r 's/: /=/g; s/\"/\\"/g; s/\$/\\$/g; s/=(.*)$/=\"\1\"/g' ); then
-  # if ! _secret=$(vault kv get -address="$server" -field=data -format=yaml "$key" | sed 's/: /=/g' ); then
     echo "Failed to download secrets"
     exit 1
   fi
