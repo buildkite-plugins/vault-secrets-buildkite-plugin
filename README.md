@@ -98,7 +98,7 @@ path "data/buildkite/private_ssh_key" {
 Key values pairs can also be uploaded.
 
 ```bash
-vault kv put data/buildkite/my_pipeline/environment value=- <<< $(echo "MY_SECRET=blah" | base64)
+vault kv put data/buildkite/my_pipeline/environment value=- <<< $(echo "MY_SECRET=blah")
 ```
 
 ```bash
@@ -139,21 +139,21 @@ credentials as needed.
 ***
 The Vault Secrets plugin supports a number of different configuration options.
 
-### `server`
+### `server` (optional, string)
 The address of the target Vault server. Example: `https://my-vault-server:8200`
 
-### `path`
+### `path` (optional, string)
 Alternative Base Path to use for Vault secrets. This is expected to be a [KV Store](https://developer.hashicorp.com/vault/docs/secrets/kv#kv-version-2)  
 
 Defaults to: `data/buildkite`
 
 
-### `auth`
+### `auth` (required, object)
 Dictionary/map with the configuration of the parameters the plugin should use to authenticate with Vault.
 
 `auth` expects the following keys:
 
-#### `method` (required)
+#### `method` (required, string)
 
 The auth method to use when authenticating with Vault. Currently only `approle` is supported
 
@@ -164,9 +164,9 @@ Possible values:
 
 The role-id the plugin should use to authenticate to Vault. Has no default value
 
-#### `secret-env` (optional)
+#### `secret-env` (optional, string)
 
-The environment variable which holds the **secret-id** used to authenticate to vault. Default `VAULT_SECRET_ID`
+The environment variable which holds the **secret-id** used to authenticate to vault. Defaults to `VAULT_SECRET_ID`
 
 Example:
 
