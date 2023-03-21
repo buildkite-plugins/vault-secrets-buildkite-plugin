@@ -153,18 +153,20 @@ Dictionary/map with the configuration of the parameters the plugin should use to
 
 `auth` accepts the following options:
 
-`method` (required)
+#### `method` (required)
+
 The auth method to use when authenticating with Vault. Currently only `approle` is supported
 
-`approle`
-Configures the plugin to use AppRole authentication to the Vault server. Requires a `role-id` be set.
+Possible values:
+* `approle`: use AppRole authentication to the Vault server (requires a `role-id` be set)
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`role-id` (required)
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The role-id the plugin should use to authenticate to Vault
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`secret-env`
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The environment variable which holds the **secret-id** used to authenticate to vault. Default `VAULT_SECRET_ID`
+#### `role-id` (required for `approle`)
 
+The role-id the plugin should use to authenticate to Vault. Has no default value
 
+#### `secret-env` (optional)
+
+The environment variable which holds the **secret-id** used to authenticate to vault. Default `VAULT_SECRET_ID`
 
 Example:
 
