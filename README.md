@@ -151,7 +151,7 @@ Defaults to: `data/buildkite`
 ### `auth`
 Dictionary/map with the configuration of the parameters the plugin should use to authenticate with Vault.
 
-`auth` accepts the following options:
+`auth` expects the following keys:
 
 #### `method` (required)
 
@@ -205,7 +205,8 @@ make integration-test
 When writing test plans, note that secrets are processed in the order they appear in the list returned from the Vault.
 
 ### Testing the pipeline
-You can test the pipeline locally using the `bk cli`
+You can test the pipeline locally using the `bk cli`. Passing the `-E BUILDKITE_PLUGIN_DOCKER_COMPOSE_RUN_LABELS=false` value will prevent the docker-compose plugin
+from trying to use variables that don't exist when running the pipeline locally.
 
 ```bash
 bk local run -E BUILDKITE_PLUGIN_DOCKER_COMPOSE_RUN_LABELS=false
