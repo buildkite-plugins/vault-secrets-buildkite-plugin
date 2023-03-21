@@ -149,7 +149,7 @@ Defaults to: `data/buildkite`
 
 
 ### `auth`
-Configure the authentication parameters the plugin should use to authenticate with Vault.
+Dictionary/map with the configuration of the parameters the plugin should use to authenticate with Vault.
 
 `auth` accepts the following options:
 
