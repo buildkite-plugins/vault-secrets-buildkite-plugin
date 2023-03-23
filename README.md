@@ -147,6 +147,9 @@ Alternative Base Path to use for Vault secrets. This is expected to be a [KV Sto
 
 Defaults to: `data/buildkite`
 
+### `namespace` (optional, string)
+Configure the [Enterprise Namespace](https://developer.hashicorp.com/vault/docs/enterprise/namespaces) to be used when querying the vault server
+
 
 ### `auth` (required, object)
 Dictionary/map with the configuration of the parameters the plugin should use to authenticate with Vault.

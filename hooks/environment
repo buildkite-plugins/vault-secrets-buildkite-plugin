@@ -71,6 +71,10 @@ basedir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
 TMPDIR=${TMPDIR:-/tmp}
 VAULT_BASE_PATH="${BUILDKITE_PLUGIN_VAULT_SECRETS_PATH:-data/buildkite}"
 
+# Check to see if we are using a different namespace for cloud/enterprise, otherwise use the default
+export VAULT_NAMESPACE="${BUILDKITE_PLUGIN_VAULT_SECRETS_NAMESPACE:-admin}"
+echo "Using namespace: $VAULT_NAMESPACE"
+
 vault_server="${BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER:-}"
 vault_path="${VAULT_BASE_PATH:-}"
 [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_PREFIX:-}" ] && vault_path="${vault_path}/${BUILDKITE_PLUGIN_VAULT_SECRETS_PREFIX}"
