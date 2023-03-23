@@ -32,7 +32,7 @@ load '/usr/local/lib/bats/load.bash'
 @test "Load default env file containing secrets with special characters from vault server" {
   export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
   export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export TESTDATA="MY_SECRET=\"|- : fooblah\""
+  export TESTDATA="MY_SECRET=\"|- $:fooblah\""
   export BUILDKITE_PIPELINE_SLUG=testpipe
 
   stub vault \
@@ -43,11 +43,33 @@ load '/usr/local/lib/bats/load.bash'
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
   assert_success
-  assert_output --partial "MY_SECRET=|- :fooblah"
+  assert_output --partial "MY_SECRET=|- $:fooblah"
   refute_output --partial "ANOTHER_SECRET=baa"
 
   unstub vault
 }
+
+
+@test "Load default env file and convert secrets with \": \" pattern from vault server" {
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
+  export TESTDATA="MY_SECRET=\"Likes: llamas\""
+  export BUILDKITE_PIPELINE_SLUG=testpipe
+
+  stub vault \
+    "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
+    "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo 'env'" \
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/env : echo ${TESTDATA}"
+
+  run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
+
+  assert_success
+  assert_output --partial "MY_SECRET=Likes=llamas"
+  refute_output --partial "ANOTHER_SECRET=baa"
+
+  unstub vault
+}
+
 
 @test "Load default environment file from vault server" {
   export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
