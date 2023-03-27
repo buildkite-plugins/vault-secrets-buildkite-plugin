@@ -26,8 +26,6 @@ vault_auth() {
       secret_var="${!BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV}"
     fi
 
-    echo "$secret_var"
-
     if [[ -z "${secret_var:-}" ]]; then
       echo "+++  🚨 No vault secret id found"
       exit 1

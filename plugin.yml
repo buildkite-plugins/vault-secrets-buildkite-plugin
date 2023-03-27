@@ -12,6 +12,8 @@ configuration:
       type: string
     server:
       type: string
+    namespace:
+      type: string
     auth:
       type: object
       properties:
