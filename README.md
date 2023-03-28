@@ -1,4 +1,4 @@
-# Vault Secrets Buildkite Plugins
+# Vault Secrets Buildkite Plugins [![Build status](https://badge.buildkite.com/a68804f84b31ee4bde97db4ee52415c13d46bf2c72a9dd06cb.svg)](https://buildkite.com/buildkite/plugins-vault-secrets)
 
 Expose secrets to your build steps. Secrets are stored encrypted-at-rest in HashiCorp Vault.
 
