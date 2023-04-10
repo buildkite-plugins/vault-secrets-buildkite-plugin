@@ -269,7 +269,6 @@ load '/usr/local/lib/bats/load.bash'
   export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
   export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
   export BUILDKITE_PIPELINE_SLUG=testpipe
-  export TESTDATA_ENV1=`echo MY_SECRET1=baa1 | base64`
 
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0 " \
@@ -288,7 +287,7 @@ load '/usr/local/lib/bats/load.bash'
   export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
   export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
   export BUILDKITE_PIPELINE_SLUG=testpipe
-  export TESTDATA_ENV1=`echo MY_SECRET1=baa1`
+  export TESTDATA_ENV1='MY_SECRET1=baa1'
 
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e '- git-credentials'" \
