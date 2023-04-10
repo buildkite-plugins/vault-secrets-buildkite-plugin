@@ -8,6 +8,9 @@ steps:
           files: 
             - lib/*.bash
             - hooks/*
+            - examples/*
+            - .buildkite/*.sh
+            - .buildkite/steps/*.sh
 
   - label: "Linter"
     plugins:
