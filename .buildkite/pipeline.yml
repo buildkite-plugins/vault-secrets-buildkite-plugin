@@ -20,8 +20,7 @@ steps:
 
   - label: ":test_tube: Tests"
     plugins:
-      - docker-compose#v4.11.0:
-          run: tests
+      - tester#v1.0.0: ~
           
   - label: ":vault: :test_tube: Integration Tests"
     command: .buildkite/steps/test_envvar.sh
