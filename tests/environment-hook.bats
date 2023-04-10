@@ -1,19 +1,23 @@
 #!/usr/bin/env bats
 
-load "${BATS_PLUGIN_PATH}/load.bash"
-
 # export SSH_AGENT_STUB_DEBUG=/dev/tty
 # export SSH_ADD_STUB_DEBUG=/dev/tty
 # export VAULT_STUB_DEBUG=/dev/tty
 # export GIT_STUB_DEBUG=/dev/tty
 
+setup() {
+  load "${BATS_PLUGIN_PATH}/load.bash"
+
+  export BUILDKITE_PIPELINE_SLUG=testpipe
+
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
+}
+
 #-------
 # Default scope
 @test "Load default env file from vault server" {
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
   export TESTDATA='MY_SECRET=fooblah'
-  export BUILDKITE_PIPELINE_SLUG=testpipe
 
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
@@ -30,10 +34,7 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 }
 
 @test "Load default env file containing secrets with special characters from vault server" {
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
   export TESTDATA="MY_SECRET=\"|- $:fooblah\""
-  export BUILDKITE_PIPELINE_SLUG=testpipe
 
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
@@ -49,12 +50,8 @@ load "${BATS_PLUGIN_PATH}/load.bash"
   unstub vault
 }
 
-
 @test "Load default env file and convert secrets with \": \" pattern from vault server" {
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
   export TESTDATA="MY_SECRET=\"Likes: llamas\""
-  export BUILDKITE_PIPELINE_SLUG=testpipe
 
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
@@ -70,12 +67,8 @@ load "${BATS_PLUGIN_PATH}/load.bash"
   unstub vault
 }
 
-
 @test "Load default environment file from vault server" {
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
   export TESTDATA='MY_SECRET=fooblah'
-  export BUILDKITE_PIPELINE_SLUG=testpipe
 
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
@@ -92,13 +85,8 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 }
 
 @test "Load default env and environments files from vault server" {
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
   export TESTDATA_ENV1='MY_SECRET=fooblah'
   export TESTDATA_ENV2='ANOTHER_SECRET=baa'
-  export BUILDKITE_PIPELINE_SLUG=testpipe
-
-
 
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
@@ -118,9 +106,6 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 #-------
 # Project scope
 @test "Load project env file from vault server" {
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA='MY_SECRET=fooblah'
 
   stub vault \
@@ -138,9 +123,6 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 }
 
 @test "Load project environment file from vault server" {
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA='echo MY_SECRET=fooblah'
 
   stub vault \
@@ -155,14 +137,9 @@ load "${BATS_PLUGIN_PATH}/load.bash"
   refute_output --partial "ANOTHER_SECRET=baa"
 
   unstub vault
-
-
 }
 
 @test "Load project env and environments files from vault server" {
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA_ENV1='echo MY_SECRET=fooblah'
   export TESTDATA_ENV2='echo ANOTHER_SECRET=baa'
 
@@ -179,15 +156,11 @@ load "${BATS_PLUGIN_PATH}/load.bash"
   assert_output --partial "ANOTHER_SECRET=baa"
 
   unstub vault
-
 }
 
 #-------
 # Combinations of scopes
 @test "Load default and project env files from vault server" {
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA_ENV1='echo MY_SECRET=fooblah'
   export TESTDATA_ENV2='echo ANOTHER_SECRET=baa'
 
@@ -204,14 +177,9 @@ load "${BATS_PLUGIN_PATH}/load.bash"
   assert_output --partial "ANOTHER_SECRET=baa"
 
   unstub vault
-
-
 }
 
 @test "Load default and project environment files from vault server" {
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA_ENV1='echo MY_SECRET=fooblah'
   export TESTDATA_ENV2='echo ANOTHER_SECRET=baa'
 
@@ -228,15 +196,11 @@ load "${BATS_PLUGIN_PATH}/load.bash"
   assert_output --partial "ANOTHER_SECRET=baa"
 
   unstub vault
-
 }
 
 #-------
 # All scopes and env, environment files
 @test "Load env and environments files for project and default from vault server" {
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA_ENV1='echo MY_SECRET1=baa1'
   export TESTDATA_ENV2='echo MY_SECRET2=baa2'
   export TESTDATA_ENV3='echo MY_SECRET3=baa3'
@@ -249,7 +213,6 @@ load "${BATS_PLUGIN_PATH}/load.bash"
     "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/environment : echo ${TESTDATA_ENV2}" \
     "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/env : echo ${TESTDATA_ENV3}" \
     "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/environment : echo ${TESTDATA_ENV4}"
-    
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
@@ -260,16 +223,11 @@ load "${BATS_PLUGIN_PATH}/load.bash"
   assert_output --partial "MY_SECRET4=baa4"
 
   unstub vault
-
 }
 
 #-------
 # Git Credentials
 @test "Load default git-credentials from vault into GIT_CONFIG_PARAMETERS" {
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export BUILDKITE_PIPELINE_SLUG=testpipe
-
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0 " \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e '- git-credentials'"
@@ -284,9 +242,6 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 }
 
 @test "Load pipeline git-credentials from vault into GIT_CONFIG_PARAMETERS" {
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA_ENV1='MY_SECRET1=baa1'
 
   stub vault \
@@ -309,10 +264,6 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 #-------
 # ssh-keys
 @test "Load default ssh-key from vault into ssh-agent" {
-  export BUILDKITE_PIPELINE_SLUG=testpipe
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA='echo foobar'
 
   stub ssh-agent "-s : echo export SSH_AGENT_PID=26345"
@@ -337,10 +288,6 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 }
 
 @test "Load project ssh-key from vault into ssh-agent" {
-  export BUILDKITE_PIPELINE_SLUG=testpipe
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA='echo foobar'
 
   stub ssh-agent "-s : echo export SSH_AGENT_PID=26345"
@@ -365,10 +312,6 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 }
 
 @test "Load default and project ssh-keys from vault into ssh-agent" {
-  export BUILDKITE_PIPELINE_SLUG=testpipe
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA='echo foobar'
   export TESTDATA2='echo foobar2'
 
@@ -393,15 +336,9 @@ load "${BATS_PLUGIN_PATH}/load.bash"
   unstub ssh-agent
   unstub vault
   unstub ssh-add
-
 }
-#-------
-#
+
 @test "Load default ssh-key and env from vault" {
-  export BUILDKITE_PIPELINE_SLUG=testpipe
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA_KEY='echo foobar'
   export TESTDATA_ENV='MY_SECRET=fooblah'
 
@@ -429,10 +366,6 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 }
 
 @test "Load project ssh-key and env from vault" {
-  export BUILDKITE_PIPELINE_SLUG=testpipe
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA_KEY='echo foobar'
   export TESTDATA_ENV='MY_SECRET=fooblah'
 
@@ -459,13 +392,7 @@ load "${BATS_PLUGIN_PATH}/load.bash"
   unstub ssh-add
 }
 
-#-------
-#
 @test "Load default ssh-key, env and git-credentials from vault into ssh-agent" {
-  export BUILDKITE_PIPELINE_SLUG=testpipe
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA_KEY='echo foobar'
   export TESTDATA_ENV='MY_SECRET=fooblah'
   export TESTDATA_GIT='me@pass'
@@ -497,10 +424,6 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 }
 
 @test "Load project ssh-key, env and git-credentials from vault into ssh-agent" {
-  export BUILDKITE_PIPELINE_SLUG=testpipe
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA_KEY='echo foobar'
   export TESTDATA_ENV='MY_SECRET=fooblah'
   export TESTDATA_GIT='me@pass'
@@ -531,10 +454,6 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 }
 
 @test "Dump env secrets" {
-  export BUILDKITE_PIPELINE_SLUG=testpipe
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
-  export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA_ENV_1='TEST_SECRET=foobar'
   export TESTDATA_ENV_2='ANOTHER_SECRET=foo'
 
@@ -560,10 +479,6 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 
 @test "test path option" {
   export BUILDKITE_PLUGIN_VAULT_SECRETS_PATH=foobar
-  export BUILDKITE_PIPELINE_SLUG=testpipe
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=false
-  export BUILDKITE_PIPELINE_SLUG=testpipe
 
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
@@ -585,10 +500,7 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 
 @test "Custom Namespace is set in environment hook" {
   export BUILDKITE_PLUGIN_VAULT_SECRETS_NAMESPACE=llamas
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
   export TESTDATA='MY_SECRET=fooblah'
-  export BUILDKITE_PIPELINE_SLUG=testpipe
 
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
