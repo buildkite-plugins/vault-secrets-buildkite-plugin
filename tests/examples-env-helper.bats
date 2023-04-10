@@ -1,17 +1,19 @@
 #!/usr/bin/env bats
 
-load '/usr/local/lib/bats/load.bash'
-
 # export SSH_AGENT_STUB_DEBUG=/dev/tty
 # export SSH_ADD_STUB_DEBUG=/dev/tty
 # export VAULT_STUB_DEBUG=/dev/tty
 # export GIT_STUB_DEBUG=/dev/tty
 
-#-------
-@test "Add environment secret var to project using example helper" {
+setup() {
+  load "${BATS_PLUGIN_PATH}/load.bash"
+
   export VAULT_ADDR=https://vault_svr_url
   export BUILDKITE_PIPELINE_SLUG=testpipe
-  export TESTDATA=`echo MY_SECRET=fooblah | base64`
+}
+
+#-------
+@test "Add environment secret var to project using example helper" {
 
   stub vault \
     "token-lookup : exit 0" \
@@ -22,16 +24,9 @@ load '/usr/local/lib/bats/load.bash'
   assert_success
 
   unstub vault
-
-  unset TESTDATA
-  unset BUILDKITE_PIPELINE_SLUG
-  unset VAULT_ADDR
 }
 
 @test "Add environment secret var to project using example helper via stdin" {
-  export VAULT_ADDR=https://vault_svr_url
-  export BUILDKITE_PIPELINE_SLUG=testpipe
-  export TESTDATA=`echo MY_SECRET=fooblah | base64`
 
   stub vault \
     "token-lookup : exit 0" \
@@ -42,30 +37,24 @@ load '/usr/local/lib/bats/load.bash'
   assert_success
 
   unstub vault
-
-  unset TESTDATA
-  unset BUILDKITE_PIPELINE_SLUG
-  unset VAULT_ADDR
 }
 
 @test "Adding environment secret var to default will fail using example helper" {
-  export VAULT_ADDR=https://vault_svr_url
+  unset BUILDKITE_PIPELINE_SLUG
 
   run bash -c "$PWD/examples/update-env-secret --var MY_SECRET --value fooblah"
 
   assert_failure
 
   assert_output --partial "--pipeline is a required argument."
-  unset VAULT_ADDR
 }
 
 @test "Will environment helper exit if Vault_ADDR is not defined" {
-  export BUILDKITE_PIPELINE_SLUG=testpipe
+  unset VAULT_ADDR
+
   run bash -c "$PWD/examples/update-env-secret --pipeline ${BUILDKITE_PIPELINE_SLUG} --var MY_SECRET --value fooblah"
 
   assert_failure
 
   assert_output --partial "set env var VAULT_ADDR for your vault server"
-
-  unset BUILDKITE_PIPELINE_SLUG
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-load '/usr/local/lib/bats/load.bash'
+load "${BATS_PLUGIN_PATH}/load.bash"
 
 # export SSH_AGENT_STUB_DEBUG=/dev/tty
 # export SSH_ADD_STUB_DEBUG=/dev/tty
@@ -48,12 +48,6 @@ load '/usr/local/lib/bats/load.bash'
   assert_output --partial 'Successfully authenticated. You are now logged in'
 
   unstub vault
-
-  unset BUILDKITE_PLUGIN_VAULT_SECRETS_PATH
-  unset BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER
-  unset BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV
-  unset BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_TOKEN
-  unset BUILDKITE_PIPELINE_SLUG
 }
 
 @test "test aws auth method" {
@@ -75,10 +69,4 @@ load '/usr/local/lib/bats/load.bash'
   assert_output --partial 'Successfully authenticated. You are now logged in'
 
   unstub vault
-
-  unset BUILDKITE_PLUGIN_VAULT_SECRETS_PATH
-  unset BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER
-  unset BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV
-  unset BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD
-  unset BUILDKITE_PIPELINE_SLUG
 }

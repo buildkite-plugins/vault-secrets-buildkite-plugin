@@ -1,9 +1,9 @@
 #!/usr/bin/env bats
 
-load '/usr/local/lib/bats/load.bash'
+load "${BATS_PLUGIN_PATH}/load.bash"
 
 # export SSH_AGENT_STUB_DEBUG=/dev/tty
-#  export SSH_KEYGEN_STUB_DEBUG=/dev/tty
+# export SSH_KEYGEN_STUB_DEBUG=/dev/tty
 # export SSH_ADD_STUB_DEBUG=/dev/tty
 # export VAULT_STUB_DEBUG=/dev/tty
 # export GIT_STUB_DEBUG=/dev/tty
@@ -12,12 +12,9 @@ load '/usr/local/lib/bats/load.bash'
 @test "Add sshkey secret var to project using example helper" {
   export VAULT_ADDR=https://vault_svr_url
   export BUILDKITE_PIPELINE_SLUG=testpipe
-  export TESTDATA=`echo MY_SECRET=fooblah | base64`
 
   stub ssh-keygen \
-    "-f ./private_ssh_key -N * : touch private_ssh_key ; touch private_ssh_key.pub"
-  # Due to the anonyances of escaping variables etc ...
-  # ssh-keygen is actually run with -N '', but that doesn't play nice with the stub so we ignore it
+    "-f \* -N '' : touch \$2 ; touch \$2.pub"
 
   stub vault \
     "token-lookup : exit 0" \
