@@ -11,6 +11,7 @@ steps:
             - examples/*
             - .buildkite/*.sh
             - .buildkite/steps/*.sh
+            - git-credential-vault-secrets
 
   - label: "Linter"
     plugins:
