@@ -94,10 +94,6 @@ secret_download() {
     echo "Failed to download secrets"
     exit 1
   fi
-  # shellcheck disable=SC2181
-  if [ "$?" -ne 0 ] ; then
-    return 1
-  fi
   echo "$_secret"
 }
 

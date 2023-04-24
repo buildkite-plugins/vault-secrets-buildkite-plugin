@@ -1,7 +1,7 @@
-#!/bin/ash
+#!/bin/sh
 set -eu
 
-if [[ -d example-private-repository ]] ; then
+if [ -d example-private-repository ] ; then
   rm -rf example-private-repository
 fi
 
