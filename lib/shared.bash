@@ -6,46 +6,116 @@ set -ueo pipefail
 vault_auth() {
   local server="$1"
 
-  # Currently we only support AppRole authentication.
+  # The plugin currently supports AppRole and AWS authentication
   # These values are referenced when authenticating to the Vault server:
-  #   BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD - approle
+  #   BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD - 'approle' or 'aws'
 
-  #   RoleID and SecretID should be stored securely on the agent, there are probably better ways to do this, but here is a start
-  #   We'll use these two values for the RoleID and SecretID:
-  #     BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV
+  ##  AppRole Authentication
+  #   SecretID should be stored securely on the agent when using AppRole authentication.
+  #   The plugin will reference these two values for the RoleID and SecretID:
+  #     BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV (default: $VAULT_SECRET_ID)
   #     BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID
-  #
-  #   For now, you will need to define the secret ID oustide of the plugin, though this will probably change.
+  
+  ##  AWS Authentication
+  #   AWS auth method only requires you to pass the name of a valid Vault role in your login call, which is not
+  #   sensitive information itself, so the role name to use can either be passed via BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME
+  #   or will fall back to using the name of the IAM role that the instance is using. 
 
-   # approle authentication
-  if [ "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" = "approle" ]; then
 
-    if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV:-}" ]; then
-      secret_var="${VAULT_SECRET_ID?No Secret ID found}"
-    else
-      secret_var="${!BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV}"
-    fi
-
-    if [[ -z "${secret_var:-}" ]]; then
-      echo "+++  🚨 No vault secret id found"
-      exit 1
-    fi
+  case "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" in
     
-    # export the vault token to be used for this job - this command writes to the auth/approle/login endpoint
-    # on success, vault will return the token which we export as VAULT_TOKEN for this shell
-    if ! VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
-     role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID" \
-     secret_id="${secret_var:-}"); then
-      echo "+++🚨 Failed to get vault token"
-      exit 1
-    fi
+    # AppRole authentication
+    approle)
+        if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV:-}" ]; then
+          secret_var="${VAULT_SECRET_ID?No Secret ID found}"
+        else
+          secret_var="${!BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV}"
+        fi
 
-    export VAULT_TOKEN
+        if [[ -z "${secret_var:-}" ]]; then
+          echo "+++  🚨 No vault secret id found"
+          exit 1
+        fi
+        
+        # export the vault token to be used for this job - this command writes to the auth/approle/login endpoint
+        # on success, vault will return the token which we export as VAULT_TOKEN for this shell
+        if ! VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
+        role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID" \
+        secret_id="${secret_var:-}"); then
+          echo "+++🚨 Failed to get vault token"
+          exit 1
+        fi
 
-    echo "Successfully authenticated with RoleID ${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID} and updated vault token"
+        export VAULT_TOKEN
 
-    return "${PIPESTATUS[0]}"
-  fi
+        echo "Successfully authenticated with RoleID ${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID} and updated vault token"
+
+        return "${PIPESTATUS[0]}"
+      ;;
+
+    # AWS Authentication  
+    aws)
+        # Check to see if we are running on EC2
+        RUNNING_ON_EC2=$(aws_platform_check)
+
+        # get the name of the IAM role the EC2 instance is using, if any
+        EC2_INSTANCE_IAM_ROLE=$( [ "$RUNNING_ON_EC2" = true ]; curl http://169.254.169.254/latest/meta-data/iam/security-credentials)
+
+        # set the role name to use; either from the plugin configuration, or fall back to the EC2 instance role
+        aws_role_name="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME:-$EC2_INSTANCE_IAM_ROLE}"
+
+        if [[ -z "${!aws_role_name:-}" ]]; then
+          echo "+++🚨 No EC2 instance IAM role defined"
+          exit 1
+        fi
+
+        # export the vault token to be used for this job - this is a standard vault auth command 
+        # on success, vault will return the token which we export as VAULT_TOKEN for this shell
+        if ! VAULT_TOKEN=$(vault login -field=token -address="$server" -method=aws role="$aws_role_name"); then
+          echo "+++🚨 Failed to get vault token"
+        fi
+
+        export VAULT_TOKEN
+
+        echo "Successfully authenticated with RoleID ${aws_role_name} and updated vault token"
+
+        return "${PIPESTATUS[0]}"
+      ;;
+    *)
+        echo -n "+++ No authentication method provided, Vault will use the value stored in VAULT_TOKEN"
+      ;;
+  esac
+  
+
+  ### Commenting out old auth function temporarily
+  # if [ "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" = "approle" ]; then
+
+  #   if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV:-}" ]; then
+  #     secret_var="${VAULT_SECRET_ID?No Secret ID found}"
+  #   else
+  #     secret_var="${!BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV}"
+  #   fi
+
+  #   if [[ -z "${secret_var:-}" ]]; then
+  #     echo "+++  🚨 No vault secret id found"
+  #     exit 1
+  #   fi
+    
+  #   # export the vault token to be used for this job - this command writes to the auth/approle/login endpoint
+  #   # on success, vault will return the token which we export as VAULT_TOKEN for this shell
+  #   if ! VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
+  #    role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID" \
+  #    secret_id="${secret_var:-}"); then
+  #     echo "+++🚨 Failed to get vault token"
+  #     exit 1
+  #   fi
+
+  #   export VAULT_TOKEN
+
+  #   echo "Successfully authenticated with RoleID ${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID} and updated vault token"
+
+  #   return "${PIPESTATUS[0]}"
+  # fi
 }
 
 list_secrets() {
@@ -112,4 +182,22 @@ add_ssh_private_key_to_agent() {
 
 grep_secrets() {
   grep -E 'private_ssh_key|id_rsa_github|env|environment|git-credentials$' "$@"
+}
+
+
+aws_platform_check() {
+    if [ -f /sys/hypervisor/uuid ]; then
+      if [ "$(head -c 3 /sys/hypervisor/uuid)" == "ec2" ]; then
+        return 0
+      else
+        return 1
+      fi
+
+    elif [ -r /sys/devices/virtual/dmi/id/product_uuid ]; then
+      if [ "$(head -c 3 /sys/devices/virtual/dmi/id/product_uuid)" == "EC2" ]; then
+        return 0
+      else
+        return 1
+      fi
+    fi
 }
