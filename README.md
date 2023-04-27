@@ -10,9 +10,11 @@ Different types of secrets are supported and exposed to your builds in appropria
 
 ## Example Usage
 
-The following pipeline uses AppRole authentication to authenticate to the Vault server, and downloads env secrets stored in `https://my-vault-server/secret/buildkite/{pipeline}/env` and git-credentials from `https://my-vault-server/secret/buildkite/{pipeline}/git-credentials`.
+The following examples use the availalb authentication methods to authenticate to the Vault server, and downloads env secrets stored in `https://my-vault-server/secret/buildkite/{pipeline}/env` and git-credentials from `https://my-vault-server/secret/buildkite/{pipeline}/git-credentials`.
 
 The keys in the `env` secret are exposed in the `checkout` and `command` as environment variables. The git-credentials are exposed as an environment variable `GIT_CONFIG_PARAMETERS` and are also exposed in the `checkout` and `command`.
+
+### AppRole Authentication
 
 ```yml
 steps:
@@ -26,6 +28,21 @@ steps:
             role-id: "my-role-id"
             secret-env: "VAULT_SECRET_ID"
 ```
+
+### AWS Authentication
+
+```yml
+steps:
+  - command: ./run_build.sh
+    plugins:
+      - vault-secrets#v1.0.0:
+          server: "https://my-vault-server"
+          path: secret/buildkite
+          auth:
+            method: "aws"
+            aws-role-name: "my-role-name"
+```
+
 
 
 ## Uploading Secrets
@@ -158,10 +175,15 @@ Dictionary/map with the configuration of the parameters the plugin should use to
 
 #### `method` (required, string)
 
-The auth method to use when authenticating with Vault. Currently only `approle` is supported
+The auth method to use when authenticating with Vault. The values listed below are supported by the plugin.
 
 Possible values:
 * `approle`: use AppRole authentication to the Vault server (requires a `role-id` be set)
+* `aws`: use AWS authentication to the Vault server (requires `aws-role-name` be set)
+
+#### `aws-role-name` (required for `aws`)
+
+The IAM role name to be used when authenticating with AWS. If no value set, and running on an EC2 instance, defaults to the IAM role of the instance.
 
 #### `role-id` (required for `approle`)
 
