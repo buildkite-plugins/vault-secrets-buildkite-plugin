@@ -59,7 +59,7 @@ vault_auth() {
         RUNNING_ON_EC2=$(aws_platform_check)
 
         # get the name of the IAM role the EC2 instance is using, if any
-        EC2_INSTANCE_IAM_ROLE=$( [ "$RUNNING_ON_EC2" = true ]; curl http://169.254.169.254/latest/meta-data/iam/security-credentials)
+        EC2_INSTANCE_IAM_ROLE=$( [ "$RUNNING_ON_EC2" == true ]; curl http://169.254.169.254/latest/meta-data/iam/security-credentials)
 
         # set the role name to use; either from the plugin configuration, or fall back to the EC2 instance role
         aws_role_name="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME:-$EC2_INSTANCE_IAM_ROLE}"
@@ -81,41 +81,8 @@ vault_auth() {
 
         return "${PIPESTATUS[0]}"
       ;;
-    *)
-        echo -n "+++ No authentication method provided, Vault will use the value stored in VAULT_TOKEN"
-      ;;
   esac
   
-
-  ### Commenting out old auth function temporarily
-  # if [ "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" = "approle" ]; then
-
-  #   if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV:-}" ]; then
-  #     secret_var="${VAULT_SECRET_ID?No Secret ID found}"
-  #   else
-  #     secret_var="${!BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV}"
-  #   fi
-
-  #   if [[ -z "${secret_var:-}" ]]; then
-  #     echo "+++  🚨 No vault secret id found"
-  #     exit 1
-  #   fi
-    
-  #   # export the vault token to be used for this job - this command writes to the auth/approle/login endpoint
-  #   # on success, vault will return the token which we export as VAULT_TOKEN for this shell
-  #   if ! VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
-  #    role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID" \
-  #    secret_id="${secret_var:-}"); then
-  #     echo "+++🚨 Failed to get vault token"
-  #     exit 1
-  #   fi
-
-  #   export VAULT_TOKEN
-
-  #   echo "Successfully authenticated with RoleID ${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID} and updated vault token"
-
-  #   return "${PIPESTATUS[0]}"
-  # fi
 }
 
 list_secrets() {
