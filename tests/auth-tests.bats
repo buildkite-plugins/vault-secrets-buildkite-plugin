@@ -4,10 +4,13 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 
 # export SSH_AGENT_STUB_DEBUG=/dev/tty
 # export SSH_ADD_STUB_DEBUG=/dev/tty
- export VAULT_STUB_DEBUG=/dev/tty
+# export VAULT_STUB_DEBUG=/dev/tty
+# export CURL_STUB_DEBUG=/dev/tty
 # export GIT_STUB_DEBUG=/dev/tty
 
-@test "test approle auth option" {
+CURL_DEFAULT_STUB='\* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \*'
+
+@test "approle auth method" {
   export BUILDKITE_PLUGIN_VAULT_SECRETS_PATH=foobar
   export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
   export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=false
@@ -29,45 +32,47 @@ load "${BATS_PLUGIN_PATH}/load.bash"
   unstub vault
 }
 
-@test "test auth token option" {
-  skip "no option to do this (yet)"
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_PATH=foobar
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=false
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_TOKEN=acdef-12345
-  export BUILDKITE_PIPELINE_SLUG=testpipe
-
-  stub vault \
-    'auth -address=https://vault_svr_url - : echo Successfully authenticated. You are now logged in' \
-    "list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
-    "list -address=https://vault_svr_url -format=yaml foobar : exit 0"
-
-  run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
-
-  assert_success
-  assert_output --partial 'Successfully authenticated. You are now logged in'
-
-  unstub vault
-}
-
-@test "test aws auth method" {
+@test "aws auth method with role name" {
   export BUILDKITE_PLUGIN_VAULT_SECRETS_PATH=foobar
   export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
   export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=false
   export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD=aws
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_AWS_ROLE_NAME=llamas
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME="llamas"
   export BUILDKITE_PIPELINE_SLUG=testpipe
-  
 
   stub vault \
-    "login -field=token -address=https://vault_svr_url -method=aws role="llamas" : echo 'Successfully authenticated with Role ID ${6}'"\
-    "list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
-    "list -address=https://vault_svr_url -format=yaml foobar : exit 0"
+    "login -field=token -address=https://vault_svr_url -method=aws role="llamas" : echo 'Successfully authenticated with IAM Role ${5}'"\
+    "kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
+    "kv list -address=https://vault_svr_url -format=yaml foobar : exit 0"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
   assert_success
-  assert_output --partial 'Successfully authenticated. You are now logged in'
+  assert_output --partial 'Successfully authenticated with IAM Role'
 
   unstub vault
+}
+
+@test "aws auth using instance IAM role" {
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_PATH=foobar
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=false
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD=aws
+  export BUILDKITE_PIPELINE_SLUG=testpipe
+
+  stub vault \
+    "login -field=token -address=https://vault_svr_url -method=aws role="llamas" : echo 'Successfully authenticated with IAM Role ${5}'"\
+    "kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
+    "kv list -address=https://vault_svr_url -format=yaml foobar : exit 0"
+
+  stub curl \
+    "${CURL_DEFAULT_STUB} : echo llamas"
+
+  run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
+
+  assert_success
+  assert_output --partial 'Successfully authenticated with IAM Role'
+
+  unstub vault
+  unstub curl
 }

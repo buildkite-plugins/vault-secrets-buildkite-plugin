@@ -55,17 +55,19 @@ vault_auth() {
 
     # AWS Authentication  
     aws)
-        # Check to see if we are running on EC2
-        RUNNING_ON_EC2=$(aws_platform_check)
-
-        # get the name of the IAM role the EC2 instance is using, if any
-        EC2_INSTANCE_IAM_ROLE=$( [ "$RUNNING_ON_EC2" == true ]; curl http://169.254.169.254/latest/meta-data/iam/security-credentials)
-
         # set the role name to use; either from the plugin configuration, or fall back to the EC2 instance role
-        aws_role_name="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME:-$EC2_INSTANCE_IAM_ROLE}"
+        if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME:-}" ]; then
+          # Check to see if we are running on EC2
+          RUNNING_ON_EC2=$(aws_platform_check)
+          # get the name of the IAM role the EC2 instance is using, if any
+          EC2_INSTANCE_IAM_ROLE=$( [ "$RUNNING_ON_EC2" = true ]; curl http://169.254.169.254/latest/meta-data/iam/security-credentials)
+          aws_role_name="${EC2_INSTANCE_IAM_ROLE}"
+        else
+          aws_role_name="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME}"
+        fi
 
-        if [[ -z "${!aws_role_name:-}" ]]; then
-          echo "+++🚨 No EC2 instance IAM role defined"
+        if [[ -z "${aws_role_name:-}" ]]; then
+          echo "+++🚨 No EC2 instance IAM role defined; value is $aws_role_name"
           exit 1
         fi
 
@@ -77,7 +79,7 @@ vault_auth() {
 
         export VAULT_TOKEN
 
-        echo "Successfully authenticated with RoleID ${aws_role_name} and updated vault token"
+        echo "Successfully authenticated with IAM Role ${aws_role_name} and updated vault token"
 
         return "${PIPESTATUS[0]}"
       ;;
