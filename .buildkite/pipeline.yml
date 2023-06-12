@@ -25,7 +25,7 @@ steps:
   - label: ":vault: :test_tube: Integration Tests"
     command: .buildkite/steps/test_envvar.sh
     plugins:
-      docker-compose#v4.12.0:
+      docker-compose#v4.13.0:
         config:
           - docker-compose-integration.yml
         run: vault-tester
