@@ -20,10 +20,13 @@ configuration:
         method:
           enum:
             - 'approle'
+            - 'aws'
             - ''
         role-id:
           type: string
         secret-env:
+          type: string
+        aws-role-name:
           type: string
     secrets:
       type: array
