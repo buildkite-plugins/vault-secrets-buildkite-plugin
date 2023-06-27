@@ -14,6 +14,7 @@ setup() {
 
 #-------
 @test "Add environment secret var to project using example helper" {
+  skip "deprecating this example script"
   EXPECTED_DATA='TVlfU0VDUkVUPSdmb29ibGFoJwo=' # MY_SECRET='fooblah'
   INPUT_DATA=$(mktemp)
 
@@ -31,6 +32,7 @@ setup() {
 }
 
 @test "Add environment secret var to project using example helper via stdin" {
+  skip "deprecating this example script"
   EXPECTED_DATA='TVlfU0VDUkVUPSdmb29ibGFoJwo=' # MY_SECRET='fooblah'
   INPUT_DATA=$(mktemp)
 
@@ -48,6 +50,7 @@ setup() {
 }
 
 @test "Adding environment secret var to default will fail using example helper" {
+  skip "deprecating this example script"
   unset BUILDKITE_PIPELINE_SLUG
 
   run bash -c "$PWD/examples/update-env-secret --var MY_SECRET --value fooblah"
@@ -58,6 +61,7 @@ setup() {
 }
 
 @test "Will environment helper exit if Vault_ADDR is not defined" {
+  skip "deprecating this example script"
   unset VAULT_ADDR
 
   run bash -c "$PWD/examples/update-env-secret --pipeline ${BUILDKITE_PIPELINE_SLUG} --var MY_SECRET --value fooblah"

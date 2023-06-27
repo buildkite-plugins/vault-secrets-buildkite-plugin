@@ -10,6 +10,7 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 
 #-------
 @test "Add sshkey secret var to project using example helper" {
+  skip "deprecating this example script"
   export VAULT_ADDR=https://vault_svr_url
   export BUILDKITE_PIPELINE_SLUG=testpipe
 
@@ -30,6 +31,7 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 }
 
 @test "Adding sshkey secret var to default will fail using example helper" {
+  skip "deprecating this example script"
   export VAULT_ADDR=https://vault_svr_url
 
   run bash -c "$PWD/examples/update-sshkey-secret"
@@ -41,6 +43,7 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 }
 
 @test "Will sshkey helper exit if Vault_ADDR is not defined" {
+  skip "deprecating this example script"
   export BUILDKITE_PIPELINE_SLUG=testpipe
   run bash -c "$PWD/examples/update-sshkey-secret --pipeline ${BUILDKITE_PIPELINE_SLUG}"
 
