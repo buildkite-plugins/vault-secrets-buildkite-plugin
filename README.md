@@ -10,7 +10,7 @@ Different types of secrets are supported and exposed to your builds in appropria
 
 ## Example Usage
 
-The following examples use the availalb authentication methods to authenticate to the Vault server, and downloads env secrets stored in `https://my-vault-server/secret/buildkite/{pipeline}/env` and git-credentials from `https://my-vault-server/secret/buildkite/{pipeline}/git-credentials`.
+The following examples use the available authentication methods to authenticate to the Vault server, and download env secrets stored in `https://my-vault-server/secret/buildkite/{pipeline}/env` and git-credentials from `https://my-vault-server/secret/buildkite/{pipeline}/git-credentials`.
 
 The keys in the `env` secret are exposed in the `checkout` and `command` as environment variables. The git-credentials are exposed as an environment variable `GIT_CONFIG_PARAMETERS` and are also exposed in the `checkout` and `command`.
 
