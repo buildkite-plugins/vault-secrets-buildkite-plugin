@@ -83,6 +83,31 @@ vault_auth() {
 
         return "${PIPESTATUS[0]}"
       ;;
+
+    jwt)
+        echo "--- performing JWT authentication"
+        if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_JWT_ENV:-}" ]; then
+          jwt_var="${VAULT_JWT?No JWT found}"
+        else
+          jwt_var="${!BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_JWT_ENV}"
+        fi
+
+        if [[ -z "${jwt_var:-}" ]]; then
+          echo "+++  🚨 No vault secret id found"
+          exit 1
+        fi
+
+        if ! VAULT_TOKEN=$(vault write auth/jwt/login -address="$server"  jwt="${jwt_var:-}"); then
+          echo "+++🚨 Failed to get vault token"
+          exit 1
+        fi
+
+        export VAULT_TOKEN
+
+        echo "Successfully authenticated with JWT"
+
+        return "${PIPESTATUS[0]}"
+    ;;
   esac
   
 }

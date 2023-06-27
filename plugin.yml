@@ -21,12 +21,15 @@ configuration:
           enum:
             - 'approle'
             - 'aws'
+            - 'jwt'
             - ''
         role-id:
           type: string
         secret-env:
           type: string
         aws-role-name:
+          type: string
+        jwt-env:
           type: string
     secrets:
       type: array
