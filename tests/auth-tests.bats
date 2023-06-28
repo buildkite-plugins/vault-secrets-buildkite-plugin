@@ -2,11 +2,11 @@
 
 load "${BATS_PLUGIN_PATH}/load.bash"
 
-export SSH_AGENT_STUB_DEBUG=/dev/tty
-export SSH_ADD_STUB_DEBUG=/dev/tty
-export VAULT_STUB_DEBUG=/dev/tty
-export CURL_STUB_DEBUG=/dev/tty
-export GIT_STUB_DEBUG=/dev/tty
+# export SSH_AGENT_STUB_DEBUG=/dev/tty
+# export SSH_ADD_STUB_DEBUG=/dev/tty
+# export VAULT_STUB_DEBUG=/dev/tty
+# export CURL_STUB_DEBUG=/dev/tty
+# export GIT_STUB_DEBUG=/dev/tty
 
 CURL_DEFAULT_STUB='\* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \*'
 

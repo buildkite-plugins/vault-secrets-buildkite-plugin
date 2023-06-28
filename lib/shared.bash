@@ -93,7 +93,7 @@ vault_auth() {
         fi
 
         if [[ -z "${jwt_var:-}" ]]; then
-          echo "+++  🚨 No vault secret id found"
+          echo "+++  🚨 No JWT found."
           exit 1
         fi
 
