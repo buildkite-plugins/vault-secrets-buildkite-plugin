@@ -42,8 +42,19 @@ steps:
             method: "aws"
             aws-role-name: "my-role-name"
 ```
+### JWT Authentication
 
-
+```yml
+steps:
+  - command: ./run_build.sh
+    plugins:
+      - vault-secrets#v1.0.0:
+          server: "https://my-vault-server"
+          path: secret/buildkite
+          auth:
+            method: "jwt"
+            jwt-env: "VAULT_JWT"
+```
 
 ## Uploading Secrets
 
@@ -180,6 +191,7 @@ The auth method to use when authenticating with Vault. The values listed below a
 Possible values:
 * `approle`: use AppRole authentication to the Vault server (requires a `role-id` be set)
 * `aws`: use AWS authentication to the Vault server (requires `aws-role-name` be set)
+* `jwt`: use JWT authentication to request a token from the Vault server
 
 #### `aws-role-name` (required for `aws`)
 
@@ -191,7 +203,11 @@ The role-id the plugin should use to authenticate to Vault. Has no default value
 
 #### `secret-env` (optional, string)
 
-The environment variable which holds the **secret-id** used to authenticate to vault. Defaults to `VAULT_SECRET_ID`
+The environment variable which holds the **secret-id** used to authenticate to Vault. Defaults to `VAULT_SECRET_ID`
+
+#### `jwt-env` (optional, string)
+
+The environment variable which contains the **JSON Web Token** used to authenticate to Vault. Defaults to `VAULT_JWT`
 
 Example:
 
