@@ -74,6 +74,8 @@ VAULT_BASE_PATH="${BUILDKITE_PLUGIN_VAULT_SECRETS_PATH:-data/buildkite}"
 # Check for a custom secret key from plugin config
 if [[ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET:-}" ]]; then
       custom_secret="${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET:-}"
+else
+      custom_secret=""
 fi
 
 # Check to see if we are using a different namespace for cloud/enterprise, otherwise use the default
