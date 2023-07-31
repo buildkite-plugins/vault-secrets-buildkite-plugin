@@ -56,9 +56,26 @@ steps:
             jwt-env: "VAULT_JWT"
 ```
 
+### Custom Secret Keys
+It is possible to download secrets from a custom secret key, by using the `secret` option on the plugin. Setting this option will tell the plugin to check the KV store for your secret (ex: `secret/buildkite/supersecret`).
+This secret should still follow the same conventions as the `env` and `environment` secrets.
+```yml
+steps:
+  - command: ./run_build.sh
+    plugins:
+      - vault-secrets#v1.1.0:
+          server: "https://my-vault-server"
+          secret: supersecret
+          path: secret/buildkite
+          auth:
+            method: "approle"
+            role-id: "my-role-id"
+            secret-env: "VAULT_SECRET_ID"
+```
+
 ## Uploading Secrets
 
-Secrets are downloaded by the plugin by matching the following keys
+Secrets are downloaded by the plugin by matching the following keys, as well as the key declared in the `secret` option
 
 ```text
 env
@@ -169,6 +186,9 @@ The Vault Secrets plugin supports a number of different configuration options.
 
 ### `server` (optional, string)
 The address of the target Vault server. Example: `https://my-vault-server:8200`
+
+### `secret` (optional, string)
+The key name for a custom secret. See [Example](#custom-secret-keys)
 
 ### `path` (optional, string)
 Alternative Base Path to use for Vault secrets. This is expected to be a [KV Store](https://developer.hashicorp.com/vault/docs/secrets/kv#kv-version-2)  

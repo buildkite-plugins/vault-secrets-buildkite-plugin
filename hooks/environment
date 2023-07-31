@@ -71,6 +71,13 @@ basedir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
 TMPDIR=${TMPDIR:-/tmp}
 VAULT_BASE_PATH="${BUILDKITE_PLUGIN_VAULT_SECRETS_PATH:-data/buildkite}"
 
+# Check for a custom secret key from plugin config
+if [[ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET:-}" ]]; then
+      custom_secret="${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET:-}"
+else
+      custom_secret=""
+fi
+
 # Check to see if we are using a different namespace for cloud/enterprise, otherwise use the default
 export VAULT_NAMESPACE="${BUILDKITE_PLUGIN_VAULT_SECRETS_NAMESPACE:-admin}"
 echo "Using namespace: $VAULT_NAMESPACE"
@@ -90,6 +97,7 @@ if [[ -n "$vault_server" ]] ; then
     "${vault_path}"
     "${VAULT_BASE_PATH}"
   )
+
   secrets=''
   for key in "${secret_paths[@]}" ; do
     echo "Checking vault secrets ${key}" >&2
@@ -100,10 +108,12 @@ if [[ -n "$vault_server" ]] ; then
     # shellcheck disable=SC2034
     _key_base="$(dirname "$secret")"
     _key_name="$(basename "$secret")"
+
     case "${_key_name:-}" in
       env|environment) processEnvSecrets "$vault_server" "$secret" ;;
       private_ssh_key|id_rsa_github) processSshSecrets "$vault_server" "$secret" ;;
       git-credentials) processGitCredentialsSecrets "$vault_server" "$secret" ;;
+      "$custom_secret") processEnvSecrets "$vault_server" "$secret"
     esac
   done
 

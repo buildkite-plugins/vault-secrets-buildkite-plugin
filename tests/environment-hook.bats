@@ -505,3 +505,95 @@ setup() {
 
   unstub vault
 }
+
+@test "Load custom secret key from default path" {
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET="supersecret"
+  export TESTDATA='MY_SECRET: fooblah'
+
+  stub vault \
+    "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
+    "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo '${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET}'" \
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET} : echo ${TESTDATA}"
+
+  run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
+
+  assert_success
+  assert_output --partial "MY_SECRET=fooblah"
+  refute_output --partial "ANOTHER_SECRET=baa"
+
+  unstub vault
+}
+
+@test "Load custom secret key from project path" {
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET="supersecret"
+  export TESTDATA='MY_SECRET: fooblah'
+
+  stub vault \
+    "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo '${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET}'" \
+    "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo 0" \
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET} : echo ${TESTDATA}"
+
+  run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
+
+  assert_success
+  assert_output --partial "MY_SECRET=fooblah"
+  refute_output --partial "ANOTHER_SECRET=baa"
+
+  unstub vault
+}
+
+@test "Load custom secret key from default and project path" {
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET="supersecret"
+  export TESTDATA='MY_SECRET: fooblah'
+  export TESTDATA2='NEW_GROOVE: llamas'
+
+  stub vault \
+    "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo '${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET}'" \
+    "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo '${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET}'" \
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET} : echo ${TESTDATA}" \
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET} : echo ${TESTDATA2}"
+    
+
+  run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
+
+  assert_success
+  assert_output --partial "MY_SECRET=fooblah"
+  assert_output --partial "NEW_GROOVE=llamas"
+  refute_output --partial "ANOTHER_SECRET=baa"
+
+  unstub vault
+}
+
+
+@test "Load env, environment, and custom secret key files for project and default from vault server" {
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET="supersecret"
+  
+  export TESTDATA_ENV1='MY_SECRET1: baa1'
+  export TESTDATA_ENV2='MY_SECRET2: baa2'
+  export TESTDATA_ENV3='MY_SECRET3: baa3'
+  export TESTDATA_ENV4='MY_SECRET4: baa4'
+  export TESTDATA_ENV5='MY_SECRET5: baa5'
+  export TESTDATA_ENV6='MY_SECRET6: baa6'
+
+  stub vault \
+    "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo 'env environment ${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET}'" \
+    "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo 'env environment ${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET}'" \
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/env : echo ${TESTDATA_ENV1}" \
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/environment : echo ${TESTDATA_ENV2}" \
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET} : echo ${TESTDATA_ENV3}" \
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/env : echo ${TESTDATA_ENV4}" \
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/environment : echo ${TESTDATA_ENV5}" \
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET} : echo ${TESTDATA_ENV6}"
+
+  run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
+
+  assert_success
+  assert_output --partial "MY_SECRET1=baa1"
+  assert_output --partial "MY_SECRET2=baa2"
+  assert_output --partial "MY_SECRET3=baa3"
+  assert_output --partial "MY_SECRET4=baa4"
+  assert_output --partial "MY_SECRET5=baa5"
+  assert_output --partial "MY_SECRET6=baa6"
+
+  unstub vault
+}
