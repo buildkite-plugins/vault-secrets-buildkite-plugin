@@ -161,6 +161,19 @@ secret_download() {
   echo "$_secret"
 }
 
+ssh_key_download() {
+  local server="$1"
+  local key="$2"
+
+  # SSH Keys must be stored as a single key inside a Vault secret named "ssh_key"
+  if ! _secret=$(vault kv get -address="$server" -field=ssh_key -format=yaml "$key"); then
+    echo "Failed to download secrets"
+    exit 1
+  fi
+  echo "$_secret"
+
+}
+
 add_ssh_private_key_to_agent() {
   local ssh_key="$1"
 

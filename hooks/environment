@@ -8,7 +8,7 @@ processSshSecrets() {
   local key="$2"
 
   echo "Found ${key}, downloading" >&2;
-  if ! ssh_key=$(secret_download "${vaultServer}" "$key") ; then
+  if ! ssh_key=$(ssh_key_download "${vaultServer}" "$key") ; then
     echo "+++ :warning: Failed to download ssh-key $key" >&2;
     exit 1
   fi

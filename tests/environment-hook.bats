@@ -271,7 +271,7 @@ setup() {
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e '- private_ssh_key'" \
-    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/private_ssh_key : echo ${TESTDATA}"
+    "kv get -address=https://vault_svr_url -field=ssh_key -format=yaml data/buildkite/private_ssh_key : echo ${TESTDATA}"
 
   stub ssh-add \
     '- : echo added ssh key'
@@ -295,7 +295,7 @@ setup() {
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e '- private_ssh_key'" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : exit 0" \
-    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/private_ssh_key : echo ${TESTDATA}"
+    "kv get -address=https://vault_svr_url -field=ssh_key -format=yaml data/buildkite/testpipe/private_ssh_key : echo ${TESTDATA}"
 
   stub ssh-add \
     '- : echo added ssh key'
@@ -320,8 +320,8 @@ setup() {
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e '- private_ssh_key'" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e '- private_ssh_key'" \
-    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/private_ssh_key : echo ${TESTDATA}" \
-    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/private_ssh_key : echo ${TESTDATA2}"
+    "kv get -address=https://vault_svr_url -field=ssh_key -format=yaml data/buildkite/testpipe/private_ssh_key : echo ${TESTDATA}" \
+    "kv get -address=https://vault_svr_url -field=ssh_key -format=yaml data/buildkite/private_ssh_key : echo ${TESTDATA2}"
 
   stub ssh-add \
     '- : echo added ssh key' \
@@ -347,7 +347,7 @@ setup() {
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e 'private_ssh_key env'" \
-    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/private_ssh_key : echo ${TESTDATA_KEY}" \
+    "kv get -address=https://vault_svr_url -field=ssh_key -format=yaml data/buildkite/private_ssh_key : echo ${TESTDATA_KEY}" \
     "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/env : echo ${TESTDATA_ENV}" \
 
   stub ssh-add \
@@ -374,7 +374,7 @@ setup() {
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo 'private_ssh_key env'" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : exit 0 " \
-    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/private_ssh_key : echo ${TESTDATA_KEY}" \
+    "kv get -address=https://vault_svr_url -field=ssh_key -format=yaml data/buildkite/testpipe/private_ssh_key : echo ${TESTDATA_KEY}" \
     "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/env : echo ${TESTDATA_ENV}" \
 
   stub ssh-add \
@@ -403,7 +403,7 @@ setup() {
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e 'env private_ssh_key git-credentials'" \
     "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/env : echo ${TESTDATA_ENV}" \
-    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/private_ssh_key : echo ${TESTDATA_KEY}"
+    "kv get -address=https://vault_svr_url -field=ssh_key -format=yaml data/buildkite/private_ssh_key : echo ${TESTDATA_KEY}"
 
   stub ssh-add \
     '- : echo added ssh key'
@@ -434,7 +434,7 @@ setup() {
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e 'env private_ssh_key git-credentials'" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : exit 0" \
     "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/env : echo ${TESTDATA_ENV}" \
-    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/private_ssh_key : echo ${TESTDATA_KEY}"
+    "kv get -address=https://vault_svr_url -field=ssh_key -format=yaml data/buildkite/testpipe/private_ssh_key : echo ${TESTDATA_KEY}"
 
   stub ssh-add \
     '- : echo added ssh key'

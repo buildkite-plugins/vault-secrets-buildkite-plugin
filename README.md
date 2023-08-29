@@ -104,6 +104,8 @@ project foo/env/var1
 project foo/env/var2
 etc
 
+Secrets are exported into the environment as key/value pairs identically matching how they are stored in Vault. For instance, a secret at path `data/buildkite/env_mytest123` with the keypair `MY_ENV_VAR=foobar` will be exported into the environment as `MY_ENV_VAR=foobar`.
+
 ### Vault Policies
 
 Create policies to manage who can read and update pipeline secrets
@@ -155,6 +157,8 @@ vault kv put data/buildkite/my_pipeline/env_key value=- <<< $(echo "my secret")
 
 This example uploads an ssh key and an environment file to the base of the Vault secret path, which means it matches all pipelines that use it. You use per-pipeline overrides by adding a path prefix of `/my-pipeline/`.
 
+SSH keyload requires the field used to store the key information to be named `ssh_key`. Any other value will result in an error.
+
 ```bash
 # generate a deploy key for your project
 ssh-keygen -t rsa -b 4096 -f id_rsa_buildkite
@@ -162,7 +166,7 @@ pbcopy < id_rsa_buildkite.pub # paste this into your github deploy key
 
 export my_pipeline=my-buildkite-secrets
 echo -n $(cat id_rsa_buildkite | base64) | vault write data/buildkite/my_pipeline/private_ssh_key \
-    value=-
+    ssh_key=-
 ```
 
 ### Git Credentials
