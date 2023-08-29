@@ -21,7 +21,11 @@ fi
 TESTDATA_1="foobar1"
 TESTDATA_2="foobar2"
 
-# [ $? -ne 1 ] && {
-   vault kv put data/buildkite/env TESTDATA_1="${TESTDATA_1}"
-   vault kv put data/buildkite/"${PROJECT}"/env TESTDATA_2="${TESTDATA_2}"
-# }
+# Generate an ssh key for testing
+ssh-keygen -t rsa -f /id_rsa -q -P "" -C "test-integration-key"
+
+vault kv put data/buildkite/env TESTDATA_1="${TESTDATA_1}"
+vault kv put data/buildkite/"${PROJECT}"/env TESTDATA_2="${TESTDATA_2}"
+
+cat /id_rsa | vault write data/buildkite/private_ssh_key \
+    ssh_key=-
