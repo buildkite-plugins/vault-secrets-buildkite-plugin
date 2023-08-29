@@ -3,7 +3,7 @@ services:
   vault-svc:
     image: "vault:${SVC_VAULT_VERSION:-1.12.1}"
     healthcheck:
-      test: wget http://127.0.0.1:8200/v1/sys/health
+      test: wget http://127.0.0.1:8200/v1/sys/health > /dev/null 2>&1
       interval: 2s
       timeout: 10s
       retries: 5
@@ -36,4 +36,4 @@ services:
     entrypoint:
       - ""
     command:
-      /app/.buildkite/steps/test_envvar.sh
+      /app/.buildkite/steps/test_integration.sh

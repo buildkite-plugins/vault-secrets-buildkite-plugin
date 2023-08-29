@@ -179,7 +179,7 @@ ssh-keygen -t rsa -b 4096 -f id_rsa_buildkite
 pbcopy < id_rsa_buildkite.pub # paste this into your github deploy key
 
 export my_pipeline=my-buildkite-secrets
-echo -n $(cat id_rsa_buildkite | base64) | vault write data/buildkite/my_pipeline/private_ssh_key \
+echo -n $(cat id_rsa_buildkite) | vault write data/buildkite/my_pipeline/private_ssh_key \
     ssh_key=-
 ```
 
