@@ -184,7 +184,7 @@ add_ssh_private_key_to_agent() {
 
   echo "Loading ssh-key into ssh-agent (pid ${SSH_AGENT_PID:-})" >&2;
 
-  echo "$ssh_key" | env SSH_ASKPASS="/bin/false" ssh-add -
+  echo -e "$ssh_key\n" | env SSH_ASKPASS="/bin/false" ssh-add -
 }
 
 grep_secrets() {
