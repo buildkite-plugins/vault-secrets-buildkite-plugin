@@ -118,9 +118,60 @@ project foo/env/var1
 project foo/env/var2
 etc
 
+Secrets are exported into the environment as key/value pairs identically matching how they are stored in Vault. For instance, a secret at path `data/buildkite/env_mytest123` with the keypair `MY_ENV_VAR=foobar` will be exported into the environment as `MY_ENV_VAR=foobar`.
+
+### Vault Policies
+
+Create policies to manage who can read and update pipeline secrets
+
+The plugin needs at least *read* and *list* capabilities for the data.
+A sample read policy, this could be used by agents.
+
+```text
+path "data/buildkite/*" {
+    capabilities = ["read", "list"]
+}
+```
+
+A sample update policy for build engineers or developers.
+This would allow creation of secrets for pipelines, but not as defaults.
+
+```text
+# Allow update of secrets
+path "data/buildkite/*" {
+    capabilities = ["create", "update", "delete", "list"]
+}
+path "data/buildkite/env" {
+    capabilities = ["deny"]
+}
+path "data/buildkite/environment" {
+    capabilities = ["deny"]
+}
+path "data/buildkite/git-credentials" {
+    capabilities = ["deny"]
+}
+path "data/buildkite/private_ssh_key" {
+    capabilities = ["deny"]
+}
+```
+### Environment Variables
+
+Key values pairs can also be uploaded.
+
+```bash
+vault kv put data/buildkite/my_pipeline/environment value=- <<< $(echo "MY_SECRET=blah")
+```
+
+```bash
+vault kv put data/buildkite/my_pipeline/env_key value=- <<< $(echo "my secret")
+```
+
+
 ### SSH Keys
 
 This example uploads an ssh key and an environment file to the base of the Vault secret path, which means it matches all pipelines that use it. You use per-pipeline overrides by adding a path prefix of `/my-pipeline/`.
+
+SSH keyload requires the field used to store the key information to be named `ssh_key`. Any other value will result in an error.
 
 ```bash
 # generate a deploy key for your project
@@ -128,8 +179,8 @@ ssh-keygen -t rsa -b 4096 -f id_rsa_buildkite
 pbcopy < id_rsa_buildkite.pub # paste this into your github deploy key
 
 export my_pipeline=my-buildkite-secrets
-echo -n $(cat id_rsa_buildkite | base64) | vault write secret/buildkite/my_pipeline/private_ssh_key \
-    value=-
+echo -n $(cat id_rsa_buildkite | base64) | vault write data/buildkite/my_pipeline/private_ssh_key \
+    ssh_key=-
 ```
 
 ### Git Credentials
