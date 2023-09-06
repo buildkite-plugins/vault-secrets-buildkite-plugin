@@ -79,7 +79,7 @@ else
 fi
 
 # Check to see if we are using a different namespace for cloud/enterprise, otherwise use the default
-export VAULT_NAMESPACE="${BUILDKITE_PLUGIN_VAULT_SECRETS_NAMESPACE:-admin}"
+export VAULT_NAMESPACE="${BUILDKITE_PLUGIN_VAULT_SECRETS_NAMESPACE:-root}"
 echo "Using namespace: $VAULT_NAMESPACE"
 
 vault_server="${BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER:-}"
