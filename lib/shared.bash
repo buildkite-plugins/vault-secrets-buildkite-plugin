@@ -166,7 +166,7 @@ ssh_key_download() {
   local key="$2"
 
   # SSH Keys must be stored as a single key inside a Vault secret named "ssh_key"
-  if ! _secret="$(vault kv get -address=${server} -field=ssh_key ${key})"; then
+  if ! _secret="$(vault kv get -address="${server}" -field=ssh_key "${key}")"; then
     echo "Failed to download secrets"
     exit 1
   fi
