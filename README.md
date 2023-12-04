@@ -20,7 +20,7 @@ The keys in the `env` secret are exposed in the `checkout` and `command` as envi
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v1.1.0:
+      - vault-secrets#v2.0.0:
           server: "https://my-vault-server"
           path: secret/buildkite
           auth:
@@ -35,7 +35,7 @@ steps:
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v1.1.0:
+      - vault-secrets#v2.0.0:
           server: "https://my-vault-server"
           path: secret/buildkite
           auth:
@@ -48,7 +48,7 @@ steps:
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v1.1.0:
+      - vault-secrets#v2.0.0:
           server: "https://my-vault-server"
           path: secret/buildkite
           auth:
@@ -63,7 +63,7 @@ This secret should still follow the same conventions as the `env` and `environme
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v1.1.0:
+      - vault-secrets#v2.0.0:
           server: "https://my-vault-server"
           secret: supersecret
           path: secret/buildkite
@@ -239,7 +239,7 @@ Example:
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v1.1.0:
+      - vault-secrets#v2.0.0:
           server: https://my-vault-server
           auth:
             method: 'approle'

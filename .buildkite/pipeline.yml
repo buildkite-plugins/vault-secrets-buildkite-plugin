@@ -22,7 +22,7 @@ steps:
       - plugin-tester#v1.1.0: ~
           
   - label: ":vault: :test_tube: Integration Tests"
-    command: .buildkite/steps/test_envvar.sh
+    command: .buildkite/steps/test_integration.sh
     plugins:
       docker-compose#v4.14.0:
         config:
