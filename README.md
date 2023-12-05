@@ -8,6 +8,71 @@ Different types of secrets are supported and exposed to your builds in appropria
 - `ssh-agent` for SSH Private Keys
 - `git-credential` via git's credential.helper
 
+## Example Usage
+
+The following examples use the available authentication methods to authenticate to the Vault server, and download env secrets stored in `https://my-vault-server/secret/buildkite/{pipeline}/env` and git-credentials from `https://my-vault-server/secret/buildkite/{pipeline}/git-credentials`.
+
+The keys in the `env` secret are exposed in the `checkout` and `command` as environment variables. The git-credentials are exposed as an environment variable `GIT_CONFIG_PARAMETERS` and are also exposed in the `checkout` and `command`.
+
+### AppRole Authentication
+
+```yml
+steps:
+  - command: ./run_build.sh
+    plugins:
+      - vault-secrets#v2.0.0:
+          server: "https://my-vault-server"
+          path: secret/buildkite
+          auth:
+            method: "approle"
+            role-id: "my-role-id"
+            secret-env: "VAULT_SECRET_ID"
+```
+
+### AWS Authentication
+
+```yml
+steps:
+  - command: ./run_build.sh
+    plugins:
+      - vault-secrets#v2.0.0:
+          server: "https://my-vault-server"
+          path: secret/buildkite
+          auth:
+            method: "aws"
+            aws-role-name: "my-role-name"
+```
+### JWT Authentication
+
+```yml
+steps:
+  - command: ./run_build.sh
+    plugins:
+      - vault-secrets#v2.0.0:
+          server: "https://my-vault-server"
+          path: secret/buildkite
+          auth:
+            method: "jwt"
+            jwt-env: "VAULT_JWT"
+```
+
+### Custom Secret Keys
+It is possible to download secrets from a custom secret key, by using the `secret` option on the plugin. Setting this option will tell the plugin to check the KV store for your secret (ex: `secret/buildkite/supersecret`).
+This secret should still follow the same conventions as the `env` and `environment` secrets.
+```yml
+steps:
+  - command: ./run_build.sh
+    plugins:
+      - vault-secrets#v2.0.0:
+          server: "https://my-vault-server"
+          secret: supersecret
+          path: secret/buildkite
+          auth:
+            method: "approle"
+            role-id: "my-role-id"
+            secret-env: "VAULT_SECRET_ID"
+```
+
 ## Uploading Secrets
 
 Secrets are downloaded by the plugin by matching the following keys, as well as the key declared in the `secret` option
@@ -179,7 +244,7 @@ ssh-keygen -t rsa -b 4096 -f id_rsa_buildkite
 pbcopy < id_rsa_buildkite.pub # paste this into your github deploy key
 
 export my_pipeline=my-buildkite-secrets
-echo -n $(cat id_rsa_buildkite | base64) | vault write data/buildkite/my_pipeline/private_ssh_key \
+echo -n $(cat id_rsa_buildkite) | vault write data/buildkite/my_pipeline/private_ssh_key \
     ssh_key=-
 ```
 
