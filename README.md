@@ -8,6 +8,71 @@ Different types of secrets are supported and exposed to your builds in appropria
 - `ssh-agent` for SSH Private Keys
 - `git-credential` via git's credential.helper
 
+## Example Usage
+
+The following examples use the available authentication methods to authenticate to the Vault server, and download env secrets stored in `https://my-vault-server/secret/buildkite/{pipeline}/env` and git-credentials from `https://my-vault-server/secret/buildkite/{pipeline}/git-credentials`.
+
+The keys in the `env` secret are exposed in the `checkout` and `command` as environment variables. The git-credentials are exposed as an environment variable `GIT_CONFIG_PARAMETERS` and are also exposed in the `checkout` and `command`.
+
+### AppRole Authentication
+
+```yml
+steps:
+  - command: ./run_build.sh
+    plugins:
+      - vault-secrets#v2.0.0:
+          server: "https://my-vault-server"
+          path: secret/buildkite
+          auth:
+            method: "approle"
+            role-id: "my-role-id"
+            secret-env: "VAULT_SECRET_ID"
+```
+
+### AWS Authentication
+
+```yml
+steps:
+  - command: ./run_build.sh
+    plugins:
+      - vault-secrets#v2.0.0:
+          server: "https://my-vault-server"
+          path: secret/buildkite
+          auth:
+            method: "aws"
+            aws-role-name: "my-role-name"
+```
+### JWT Authentication
+
+```yml
+steps:
+  - command: ./run_build.sh
+    plugins:
+      - vault-secrets#v2.0.0:
+          server: "https://my-vault-server"
+          path: secret/buildkite
+          auth:
+            method: "jwt"
+            jwt-env: "VAULT_JWT"
+```
+
+### Custom Secret Keys
+It is possible to download secrets from a custom secret key, by using the `secret` option on the plugin. Setting this option will tell the plugin to check the KV store for your secret (ex: `secret/buildkite/supersecret`).
+This secret should still follow the same conventions as the `env` and `environment` secrets.
+```yml
+steps:
+  - command: ./run_build.sh
+    plugins:
+      - vault-secrets#v2.0.0:
+          server: "https://my-vault-server"
+          secret: supersecret
+          path: secret/buildkite
+          auth:
+            method: "approle"
+            role-id: "my-role-id"
+            secret-env: "VAULT_SECRET_ID"
+```
+
 ## Uploading Secrets
 
 Secrets are downloaded by the plugin by matching the following keys, as well as the key declared in the `secret` option
@@ -118,9 +183,60 @@ project foo/env/var1
 project foo/env/var2
 etc
 
+Secrets are exported into the environment as key/value pairs identically matching how they are stored in Vault. For instance, a secret at path `data/buildkite/env_mytest123` with the keypair `MY_ENV_VAR=foobar` will be exported into the environment as `MY_ENV_VAR=foobar`.
+
+### Vault Policies
+
+Create policies to manage who can read and update pipeline secrets
+
+The plugin needs at least *read* and *list* capabilities for the data.
+A sample read policy, this could be used by agents.
+
+```text
+path "data/buildkite/*" {
+    capabilities = ["read", "list"]
+}
+```
+
+A sample update policy for build engineers or developers.
+This would allow creation of secrets for pipelines, but not as defaults.
+
+```text
+# Allow update of secrets
+path "data/buildkite/*" {
+    capabilities = ["create", "update", "delete", "list"]
+}
+path "data/buildkite/env" {
+    capabilities = ["deny"]
+}
+path "data/buildkite/environment" {
+    capabilities = ["deny"]
+}
+path "data/buildkite/git-credentials" {
+    capabilities = ["deny"]
+}
+path "data/buildkite/private_ssh_key" {
+    capabilities = ["deny"]
+}
+```
+### Environment Variables
+
+Key values pairs can also be uploaded.
+
+```bash
+vault kv put data/buildkite/my_pipeline/environment value=- <<< $(echo "MY_SECRET=blah")
+```
+
+```bash
+vault kv put data/buildkite/my_pipeline/env_key value=- <<< $(echo "my secret")
+```
+
+
 ### SSH Keys
 
 This example uploads an ssh key and an environment file to the base of the Vault secret path, which means it matches all pipelines that use it. You use per-pipeline overrides by adding a path prefix of `/my-pipeline/`.
+
+SSH keyload requires the field used to store the key information to be named `ssh_key`. Any other value will result in an error.
 
 ```bash
 # generate a deploy key for your project
@@ -128,8 +244,8 @@ ssh-keygen -t rsa -b 4096 -f id_rsa_buildkite
 pbcopy < id_rsa_buildkite.pub # paste this into your github deploy key
 
 export my_pipeline=my-buildkite-secrets
-echo -n $(cat id_rsa_buildkite | base64) | vault write secret/buildkite/my_pipeline/private_ssh_key \
-    value=-
+echo -n $(cat id_rsa_buildkite) | vault write data/buildkite/my_pipeline/private_ssh_key \
+    ssh_key=-
 ```
 
 ### Git Credentials
