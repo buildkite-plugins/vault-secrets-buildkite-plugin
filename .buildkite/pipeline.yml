@@ -14,7 +14,7 @@ steps:
 
   - label: "Linter"
     plugins:
-      - plugin-linter#v3.2.0:
+      - plugin-linter#v3.3.0:
           id: vault-secrets
 
   - label: ":test_tube: Tests"
