@@ -19,7 +19,7 @@ steps:
 
   - label: ":test_tube: Tests"
     plugins:
-      - plugin-tester#v1.1.0: ~
+      - plugin-tester#v1.1.1: ~
           
   - label: ":vault: :test_tube: Integration Tests"
     command: .buildkite/steps/test_integration.sh
