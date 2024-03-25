@@ -16,6 +16,16 @@ The keys in the `env` secret are exposed in the `checkout` and `command` as envi
 
 ### AppRole Authentication
 
+## Environment Hook
+```bash
+# This is configuration for setting the vault token, as an example to the environment
+echo "~~~ :buildkite: agent :vault: config"
+export VAULT_TOKEN="buildkite-is-cool"
+
+# Alternatively, you can use secret-env to store the VAULT_SECRET_ID, instead of the below line
+export VAULT_SECRET_ID=$(vault read -field "secret_id" auth/approle/role/buildkite/secret-id)
+```
+
 ```yml
 steps:
   - command: ./run_build.sh
