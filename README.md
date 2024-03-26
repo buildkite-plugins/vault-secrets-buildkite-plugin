@@ -19,7 +19,7 @@ You can read more about Vault's AppRole auth method in their [documentation](htt
 
 
 #### Environment hook using secret-env
-This example shows how to use an environment hook use a `SUPER_SECRET_ID` variable in the environment through the plugin's `secret-env`.
+This example shows how to use an environment hook using a `SUPER_SECRET_ID` variable in the environment through the plugin's `secret-env`.
 
 ```bash
 # This value is set in your agent's Environment hook
