@@ -15,7 +15,7 @@ The following examples use the available authentication methods to authenticate 
 The keys in the `env` secret are exposed in the `checkout` and `command` as environment variables. The git-credentials are exposed as an environment variable `GIT_CONFIG_PARAMETERS` and are also exposed in the `checkout` and `command`.
 
 ### AppRole Authentication
-You can read more about Vault's AppRole auth method in their (documentation)[https://developer.hashicorp.com/vault/docs/auth/approle].
+You can read more about Vault's AppRole auth method in their [documentation](https://developer.hashicorp.com/vault/docs/auth/approle).
 
 
 #### Environment hook using secret-env
