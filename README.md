@@ -15,15 +15,15 @@ The following examples use the available authentication methods to authenticate 
 The keys in the `env` secret are exposed in the `checkout` and `command` as environment variables. The git-credentials are exposed as an environment variable `GIT_CONFIG_PARAMETERS` and are also exposed in the `checkout` and `command`.
 
 ### AppRole Authentication
+You can read more about Vault's AppRole auth method in their (documentation)[https://developer.hashicorp.com/vault/docs/auth/approle].
 
-## Environment Hook
+
+#### Environment hook using secret-env
+This example shows how to use an environment hook use a `SUPER_SECRET_ID` variable in the environment through the plugin's `secret-env`.
+
 ```bash
-# This is configuration for setting the vault token, as an example to the environment
-echo "~~~ :buildkite: agent :vault: config"
-export VAULT_TOKEN="buildkite-is-cool"
-
-# Alternatively, you can use secret-env to store the VAULT_SECRET_ID, instead of the below line
-export VAULT_SECRET_ID=$(vault read -field "secret_id" auth/approle/role/buildkite/secret-id)
+# This value is set in your agent's Environment hook
+SUPER_SECRET_ID=$(vault read -field "secret_id" auth/approle/role/buildkite/secret-id)
 ```
 
 ```yml
@@ -36,7 +36,25 @@ steps:
           auth:
             method: "approle"
             role-id: "my-role-id"
-            secret-env: "VAULT_SECRET_ID"
+            secret-env: "SUPER_SECRET_ID"
+```
+
+#### Environment hook without secret-env
+```bash
+# This value is set in your agent's Environment hook
+export VAULT_SECRET_ID="$(vault read -field "secret_id" auth/approle/role/buildkite/secret-id)"
+```
+
+```yml
+steps:
+  - command: ./run_build.sh
+    plugins:
+      - vault-secrets#v2.0.0:
+          server: "https://my-vault-server"
+          path: secret/buildkite
+          auth:
+            method: "approle"
+            role-id: "my-role-id"
 ```
 
 ### AWS Authentication
