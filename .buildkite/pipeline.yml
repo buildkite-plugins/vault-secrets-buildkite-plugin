@@ -3,6 +3,8 @@ env:
   VAULT_DEV_ROOT_TOKEN_ID: "88F4384B-98E9-4AE3-B00C-F55678F89080"
 steps:
   - label: "Shellcheck"
+    agents:
+      queue: "hosted"
     plugins:
       - shellcheck#v1.3.0:
           files: 
@@ -18,11 +20,15 @@ steps:
           id: vault-secrets
 
   - label: ":test_tube: Tests"
+    agents:
+      queue: "hosted"
     plugins:
       - plugin-tester#v1.1.1: ~
           
   - label: ":vault: :test_tube: Integration Tests"
     command: .buildkite/steps/test_integration.sh
+    agents:
+      queue: "hosted"
     plugins:
       docker-compose#v5.2.0:
         config:
