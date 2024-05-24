@@ -1,6 +1,10 @@
 #!/bin/bash
 
+<<<<<<< HEAD
 #set -o xtrace
+=======
+set -o xtrace
+>>>>>>> 4df4cd6d763eefb9ee0f7e322a7147116ab6fcf2
 set -eu -o pipefail
 
 processSshSecrets() {
