@@ -155,7 +155,6 @@ secret_download() {
   local server="$1"
   local key="$2"
 
-<<<<<<< HEAD
   # Attempt to retrieve the secret from Vault
 if ! _secret=$(vault kv get -address="$server" -field=data -format=yaml "$key" | \
     sed -r '
@@ -193,18 +192,6 @@ if [[ "${_secret:0:1}" == "{" ]]; then
     ')
 fi
 
-=======
-  if ! _secret=$(vault kv get -address="$server" -field=data -format=yaml "$key" | sed -r 's/: /=/; s/\"/\\"/g; s/\$/\\$/g; s/=(.*)$/=\"\1\"/g' ); then
-    echo "Failed to download secrets: $_secret"
-    exit 1
-  fi
-
-  if [[ "${_secret:0:1}" == "{" ]]; then
-    # It's JSON, handle accordingly
-    _secret=$(vault kv get -address="$server" -field=data -format=json "$key" | sed -r 's/: /=/; s/\"/\\"/g;' )
-    _secret=$(jq -c 'walk(if type == "object" then with_entries(.key |= gsub("_"; "__") | gsub("\\."; "_")) else . end)' <<< "$_secret" | jq -r '[paths(scalars) as $p | {key: $p | join("_"), value: getpath($p)}] | .[] | "\(.key)=\(.value)"')
-  fi
->>>>>>> 4df4cd6d763eefb9ee0f7e322a7147116ab6fcf2
   echo "$_secret"
 }
 
