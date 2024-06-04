@@ -154,10 +154,44 @@ secret_exists() {
 secret_download() {
   local server="$1"
   local key="$2"
-  if ! _secret=$(vault kv get -address="$server" -field=data -format=yaml "$key" | sed -r 's/: /=/; s/\"/\\"/g; s/\$/\\$/g; s/=(.*)$/=\"\1\"/g' ); then
-    echo "Failed to download secrets"
+
+  # Attempt to retrieve the secret from Vault
+if ! _secret=$(vault kv get -address="$server" -field=data -format=yaml "$key" | \
+    sed -r '
+        s/: /=/;       # Replace ':' with '='
+        s/\"/\\"/g;    # Escape double quotes
+        s/\$/\\$/g;    # Escape dollar signs
+        s/=(.*)$/="\1"/g; # Enclose values in double quotes
+    '); then
+
+    # If the command fails, print an error message and exit
+    echo "Failed to download secrets: $_secret"
     exit 1
-  fi
+fi
+
+  # Check if the first character of the _secret variable is a '{'
+if [[ "${_secret:0:1}" == "{" ]]; then
+    # It's JSON, handle accordingly
+
+    # Retrieve the secret from Vault, extract the 'data' field, and format it as JSON
+    _secret=$(vault kv get -address="$server" -field=data -format=json "$key" | sed -r 's/: /=/; s/\"/\\"/g;')
+
+    # Process the JSON secret to replace underscores and periods in keys
+    _secret=$(jq -c '
+        walk(
+            if type == "object" then 
+                with_entries(.key |= gsub("_"; "__") | gsub("\\."; "_")) 
+            else 
+                . 
+            end
+        )
+    ' <<< "$_secret" | jq -r '
+        [paths(scalars) as $p | 
+            {key: $p | join("_"), value: getpath($p)}
+        ] | .[] | "\(.key)=\(.value)"
+    ')
+fi
+
   echo "$_secret"
 }
 
