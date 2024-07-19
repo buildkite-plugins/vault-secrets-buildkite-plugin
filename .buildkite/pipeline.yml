@@ -30,7 +30,7 @@ steps:
     agents:
       queue: "hosted"
     plugins:
-      docker-compose#v5.2.0:
+      docker-compose#v5.3.0:
         config:
           - docker-compose-integration.yml
         run: vault-tester
