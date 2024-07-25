@@ -604,8 +604,8 @@ setup() {
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo 'env'" \
-    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/env : echo ${TESTDATA}" \
-    "kv get -address=https://vault_svr_url -field=data -format=json data/buildkite/env : echo ${TESTDATA}"
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/env : echo '${TESTDATA}'" \
+    "kv get -address=https://vault_svr_url -field=data -format=json data/buildkite/env : echo '${TESTDATA}'"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
