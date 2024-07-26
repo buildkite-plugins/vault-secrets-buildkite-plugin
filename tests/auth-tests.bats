@@ -8,7 +8,10 @@ load "${BATS_PLUGIN_PATH}/load.bash"
 # export CURL_STUB_DEBUG=/dev/tty
 # export GIT_STUB_DEBUG=/dev/tty
 
-CURL_DEFAULT_STUB='\* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \*'
+setup() {
+  # if this is not defined, the hook will try to use EC2 metadata to get the instance role
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME='role'
+}
 
 @test "approle auth method" {
   export BUILDKITE_PLUGIN_VAULT_SECRETS_PATH=foobar
@@ -25,7 +28,7 @@ CURL_DEFAULT_STUB='\* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \
     "kv list -address=https://vault_svr_url -format=yaml foobar : exit 0"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
-  
+
   assert_success
   assert_output --partial 'Successfully authenticated with RoleID'
 
@@ -41,7 +44,7 @@ CURL_DEFAULT_STUB='\* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \
   export BUILDKITE_PIPELINE_SLUG=testpipe
 
   stub vault \
-    "login -field=token -address=https://vault_svr_url -method=aws role="llamas" : echo 'Successfully authenticated with IAM Role ${5}'"\
+    "login -field=token -address=https://vault_svr_url -method=aws role=\"llamas\" : echo 'Successfully authenticated with IAM Role ${5}'"\
     "kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml foobar : exit 0"
 
@@ -60,13 +63,16 @@ CURL_DEFAULT_STUB='\* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \
   export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD=aws
   export BUILDKITE_PIPELINE_SLUG=testpipe
 
+  # force check
+  unset BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME
+
   stub vault \
-    "login -field=token -address=https://vault_svr_url -method=aws role="llamas" : echo 'Successfully authenticated with IAM Role ${5}'"\
+    "login -field=token -address=https://vault_svr_url -method=aws role=\"llamas\" : echo 'Successfully authenticated with IAM Role ${5}'"\
     "kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml foobar : exit 0"
 
   stub curl \
-    "${CURL_DEFAULT_STUB} : echo llamas"
+    "\* : echo llamas"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
@@ -86,7 +92,7 @@ CURL_DEFAULT_STUB='\* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \
   export BUILDKITE_PIPELINE_SLUG=testpipe
 
   stub vault \
-    "write auth/jwt/login -address="https://vault_svr_url" jwt=llamas : echo 'Successfully authenticated.'"\
+    "write auth/jwt/login -address=\"https://vault_svr_url\" jwt=llamas : echo 'Successfully authenticated.'"\
     "kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml foobar : exit 0"
 
@@ -107,7 +113,7 @@ CURL_DEFAULT_STUB='\* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \
   export BUILDKITE_PIPELINE_SLUG=testpipe
 
   stub vault \
-    "write auth/jwt/login -address="https://vault_svr_url" jwt=llamas : echo 'Successfully authenticated.'"\
+    "write auth/jwt/login -address=\"https://vault_svr_url\" jwt=llamas : echo 'Successfully authenticated.'"\
     "kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml foobar : exit 0"
 
@@ -129,7 +135,7 @@ CURL_DEFAULT_STUB='\* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \* \
   export BUILDKITE_PIPELINE_SLUG=testpipe
 
   stub vault \
-    "write auth/jwt/login -address="https://vault_svr_url" jwt=llamas : echo 'Successfully authenticated.'"\
+    "write auth/jwt/login -address=\"https://vault_svr_url\" jwt=llamas : echo 'Successfully authenticated.'"\
     "kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml foobar : exit 0"
 
