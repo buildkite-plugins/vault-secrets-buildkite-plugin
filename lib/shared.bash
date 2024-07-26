@@ -185,7 +185,7 @@ secret_download() {
     ' <<< "$_secret" | jq -r '
         [paths(scalars) as $p |
             {key: $p | join("_"), value: getpath($p)}
-        ] | .[] | "\(.key)=\(.value)"
+        ] | .[] | "\(.key)=\"\(.value)\""
     ')
   fi
 
