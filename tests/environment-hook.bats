@@ -599,7 +599,7 @@ setup() {
 }
 
 @test "Load custom json secret" {
-  export TESTDATA='{"MY_SECRET": "fooblah"}'
+  export TESTDATA='{"MY_SECRET": "fooblah", "OTHER SECRET": "foo bar"}'
 
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
@@ -611,7 +611,9 @@ setup() {
 
   assert_success
   assert_output --partial "MY_SECRET=fooblah"
-  refute_output --partial "ANOTHER_SECRET=baa"
+  assert_output --partial "OTHER_SECRET=foo bar"
+  refute_output --partial "OTHER SECRET=foobar"
+  refute_output --partial "OTHER_SECRET=foobar"
 
   unstub vault
 }
