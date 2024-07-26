@@ -53,14 +53,12 @@ vault_auth() {
         return "${PIPESTATUS[0]}"
       ;;
 
-    # AWS Authentication  
+    # AWS Authentication
     aws)
         # set the role name to use; either from the plugin configuration, or fall back to the EC2 instance role
         if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME:-}" ]; then
-          # Check to see if we are running on EC2
-          RUNNING_ON_EC2=$(aws_platform_check)
           # get the name of the IAM role the EC2 instance is using, if any
-          EC2_INSTANCE_IAM_ROLE=$( [ "$RUNNING_ON_EC2" = true ]; curl http://169.254.169.254/latest/meta-data/iam/security-credentials)
+          EC2_INSTANCE_IAM_ROLE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials)
           aws_role_name="${EC2_INSTANCE_IAM_ROLE}"
         else
           aws_role_name="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME}"
@@ -221,22 +219,4 @@ add_ssh_private_key_to_agent() {
 
 grep_secrets() {
   grep -E 'private_ssh_key|id_rsa_github|env|environment|git-credentials$' "$@"
-}
-
-
-aws_platform_check() {
-    if [ -f /sys/hypervisor/uuid ]; then
-      if [ "$(head -c 3 /sys/hypervisor/uuid)" == "ec2" ]; then
-        return 0
-      else
-        return 1
-      fi
-
-    elif [ -r /sys/devices/virtual/dmi/id/product_uuid ]; then
-      if [ "$(head -c 3 /sys/devices/virtual/dmi/id/product_uuid)" == "EC2" ]; then
-        return 0
-      else
-        return 1
-      fi
-    fi
 }
