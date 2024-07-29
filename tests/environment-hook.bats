@@ -264,12 +264,6 @@ setup() {
 #-------
 # ssh-keys
 @test "Load default ssh-key from vault into ssh-agent" {
-
-  export SSH_AGENT_STUB_DEBUG=/dev/tty
-  export SSH_ADD_STUB_DEBUG=/dev/tty
-  export VAULT_STUB_DEBUG=/dev/tty
-  export GIT_STUB_DEBUG=/dev/tty
-
   export TESTDATA='foobar'
 
   stub ssh-agent "-s : echo export SSH_AGENT_PID=26345"
@@ -558,7 +552,7 @@ setup() {
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo '${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET}'" \
     "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET} : echo ${TESTDATA}" \
     "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET} : echo ${TESTDATA2}"
-    
+
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
@@ -573,7 +567,7 @@ setup() {
 
 @test "Load env, environment, and custom secret key files for project and default from vault server" {
   export BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET="supersecret"
-  
+
   export TESTDATA_ENV1='MY_SECRET1: baa1'
   export TESTDATA_ENV2='MY_SECRET2: baa2'
   export TESTDATA_ENV3='MY_SECRET3: baa3'
@@ -605,19 +599,21 @@ setup() {
 }
 
 @test "Load custom json secret" {
-  export TESTDATA='{"MY_SECRET": "fooblah"}'
+  export TESTDATA='{"MY_SECRET": "fooblah", "OTHER SECRET": "foo bar"}'
 
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo 'env'" \
-    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/env : echo ${TESTDATA}" \
-    "kv get -address=https://vault_svr_url -field=data -format=json data/buildkite/env : echo ${TESTDATA}"
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/env : echo '${TESTDATA}'" \
+    "kv get -address=https://vault_svr_url -field=data -format=json data/buildkite/env : echo '${TESTDATA}'"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
   assert_success
   assert_output --partial "MY_SECRET=fooblah"
-  refute_output --partial "ANOTHER_SECRET=baa"
+  assert_output --partial "OTHER_SECRET=foo bar"
+  refute_output --partial "OTHER SECRET=foobar"
+  refute_output --partial "OTHER_SECRET=foobar"
 
   unstub vault
 }

@@ -15,15 +15,15 @@ vault_auth() {
   #   The plugin will reference these two values for the RoleID and SecretID:
   #     BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV (default: $VAULT_SECRET_ID)
   #     BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID
-  
+
   ##  AWS Authentication
   #   AWS auth method only requires you to pass the name of a valid Vault role in your login call, which is not
   #   sensitive information itself, so the role name to use can either be passed via BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME
-  #   or will fall back to using the name of the IAM role that the instance is using. 
+  #   or will fall back to using the name of the IAM role that the instance is using.
 
 
   case "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" in
-    
+
     # AppRole authentication
     approle)
         if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV:-}" ]; then
@@ -36,7 +36,7 @@ vault_auth() {
           echo "+++  🚨 No vault secret id found"
           exit 1
         fi
-        
+
         # export the vault token to be used for this job - this command writes to the auth/approle/login endpoint
         # on success, vault will return the token which we export as VAULT_TOKEN for this shell
         if ! VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
@@ -53,14 +53,12 @@ vault_auth() {
         return "${PIPESTATUS[0]}"
       ;;
 
-    # AWS Authentication  
+    # AWS Authentication
     aws)
         # set the role name to use; either from the plugin configuration, or fall back to the EC2 instance role
         if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME:-}" ]; then
-          # Check to see if we are running on EC2
-          RUNNING_ON_EC2=$(aws_platform_check)
           # get the name of the IAM role the EC2 instance is using, if any
-          EC2_INSTANCE_IAM_ROLE=$( [ "$RUNNING_ON_EC2" = true ]; curl http://169.254.169.254/latest/meta-data/iam/security-credentials)
+          EC2_INSTANCE_IAM_ROLE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials)
           aws_role_name="${EC2_INSTANCE_IAM_ROLE}"
         else
           aws_role_name="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME}"
@@ -71,7 +69,7 @@ vault_auth() {
           exit 1
         fi
 
-        # export the vault token to be used for this job - this is a standard vault auth command 
+        # export the vault token to be used for this job - this is a standard vault auth command
         # on success, vault will return the token which we export as VAULT_TOKEN for this shell
         if ! VAULT_TOKEN=$(vault login -field=token -address="$server" -method=aws role="$aws_role_name"); then
           echo "+++🚨 Failed to get vault token"
@@ -109,7 +107,6 @@ vault_auth() {
         return "${PIPESTATUS[0]}"
     ;;
   esac
-  
 }
 
 list_secrets() {
@@ -156,7 +153,7 @@ secret_download() {
   local key="$2"
 
   # Attempt to retrieve the secret from Vault
-if ! _secret=$(vault kv get -address="$server" -field=data -format=yaml "$key" | \
+  if ! _secret=$(vault kv get -address="$server" -field=data -format=yaml "$key" | \
     sed -r '
         s/: /=/;       # Replace ':' with '='
         s/\"/\\"/g;    # Escape double quotes
@@ -167,30 +164,30 @@ if ! _secret=$(vault kv get -address="$server" -field=data -format=yaml "$key" |
     # If the command fails, print an error message and exit
     echo "Failed to download secrets: $_secret"
     exit 1
-fi
+  fi
 
   # Check if the first character of the _secret variable is a '{'
-if [[ "${_secret:0:1}" == "{" ]]; then
+  if [[ "${_secret:0:1}" == "{" ]]; then
     # It's JSON, handle accordingly
 
     # Retrieve the secret from Vault, extract the 'data' field, and format it as JSON
-    _secret=$(vault kv get -address="$server" -field=data -format=json "$key" | sed -r 's/: /=/; s/\"/\\"/g;')
+    _secret=$(vault kv get -address="$server" -field=data -format=json "$key")
 
     # Process the JSON secret to replace underscores and periods in keys
     _secret=$(jq -c '
         walk(
-            if type == "object" then 
-                with_entries(.key |= gsub("_"; "__") | gsub("\\."; "_")) 
-            else 
-                . 
+            if type == "object" then
+                with_entries(.key |= gsub("[^A-Za-z0-9_]"; "_"))
+            else
+                .
             end
         )
     ' <<< "$_secret" | jq -r '
-        [paths(scalars) as $p | 
+        [paths(scalars) as $p |
             {key: $p | join("_"), value: getpath($p)}
-        ] | .[] | "\(.key)=\(.value)"
+        ] | .[] | "\(.key)=\"\(.value)\""
     ')
-fi
+  fi
 
   echo "$_secret"
 }
@@ -222,22 +219,4 @@ add_ssh_private_key_to_agent() {
 
 grep_secrets() {
   grep -E 'private_ssh_key|id_rsa_github|env|environment|git-credentials$' "$@"
-}
-
-
-aws_platform_check() {
-    if [ -f /sys/hypervisor/uuid ]; then
-      if [ "$(head -c 3 /sys/hypervisor/uuid)" == "ec2" ]; then
-        return 0
-      else
-        return 1
-      fi
-
-    elif [ -r /sys/devices/virtual/dmi/id/product_uuid ]; then
-      if [ "$(head -c 3 /sys/devices/virtual/dmi/id/product_uuid)" == "EC2" ]; then
-        return 0
-      else
-        return 1
-      fi
-    fi
 }

@@ -1,6 +1,5 @@
 #!/bin/bash
 
-set -o xtrace
 set -eu -o pipefail
 
 processSshSecrets() {
