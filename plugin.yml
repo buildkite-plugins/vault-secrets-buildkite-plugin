@@ -33,6 +33,8 @@ configuration:
           type: string
         jwt-env:
           type: string
+        jwt-role:
+          type: string
     secrets:
       type: array
   additionalProperties: false
