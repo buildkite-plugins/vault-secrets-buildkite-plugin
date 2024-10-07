@@ -95,7 +95,7 @@ vault_auth() {
           exit 1
         fi
 
-        if ! VAULT_TOKEN=$(vault write auth/jwt/login -address="$server"  jwt="${jwt_var:-}"); then
+        if ! VAULT_TOKEN=$(vault write -field=token auth/jwt/login role="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_JWT_ROLE:-"buildkite"}" jwt="${jwt_var:-}"); then
           echo "+++🚨 Failed to get vault token"
           exit 1
         fi

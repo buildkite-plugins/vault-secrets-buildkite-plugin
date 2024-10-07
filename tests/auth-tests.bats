@@ -92,7 +92,7 @@ setup() {
   export BUILDKITE_PIPELINE_SLUG=testpipe
 
   stub vault \
-    "write auth/jwt/login -address=\"https://vault_svr_url\" jwt=llamas : echo 'Successfully authenticated.'"\
+    "write -field=token auth/jwt/login role=buildkite jwt=llamas : echo 'Successfully authenticated.'"\
     "kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml foobar : exit 0"
 
@@ -104,7 +104,7 @@ setup() {
   unstub vault
 }
 
-@test "auth using jwt with default jwt var" {
+@test "auth using jwt with default jwt values" {
   export BUILDKITE_PLUGIN_VAULT_SECRETS_PATH=foobar
   export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
   export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=false
@@ -113,7 +113,7 @@ setup() {
   export BUILDKITE_PIPELINE_SLUG=testpipe
 
   stub vault \
-    "write auth/jwt/login -address=\"https://vault_svr_url\" jwt=llamas : echo 'Successfully authenticated.'"\
+    "write -field=token auth/jwt/login role=buildkite jwt=llamas : echo 'Successfully authenticated.'"\
     "kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml foobar : exit 0"
 
@@ -135,7 +135,30 @@ setup() {
   export BUILDKITE_PIPELINE_SLUG=testpipe
 
   stub vault \
-    "write auth/jwt/login -address=\"https://vault_svr_url\" jwt=llamas : echo 'Successfully authenticated.'"\
+    "write -field=token auth/jwt/login role=buildkite jwt=llamas : echo 'Successfully authenticated.'"\
+    "kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
+    "kv list -address=https://vault_svr_url -format=yaml foobar : exit 0"
+
+  run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
+
+  assert_success
+  assert_output --partial 'Successfully authenticated with JWT'
+
+  unstub vault
+}
+
+@test "auth using jwt with role and jwt_var set" {
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_PATH=foobar
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=false
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD=jwt
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_JWT_ENV=VERY_COOL
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_JWT_ROLE="bkbkbk"
+  export VERY_COOL=llamas
+  export BUILDKITE_PIPELINE_SLUG=testpipe
+
+  stub vault \
+    "write -field=token auth/jwt/login role=bkbkbk jwt=llamas : echo 'Successfully authenticated.'"\
     "kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml foobar : exit 0"
 

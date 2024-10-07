@@ -376,6 +376,10 @@ The environment variable which holds the **secret-id** used to authenticate to V
 
 The environment variable which contains the **JSON Web Token** used to authenticate to Vault. Defaults to `VAULT_JWT`
 
+#### `jwt-role` (optional, string)
+
+The role name that should be used to log in to Vault. Defaults to `buildkite`
+
 Example:
 
 ```yaml
