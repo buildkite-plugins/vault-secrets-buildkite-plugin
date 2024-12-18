@@ -210,6 +210,7 @@ add_ssh_private_key_to_agent() {
   if [[ -z "${SSH_AGENT_PID:-}" ]] ; then
     echo "Starting an ephemeral ssh-agent" >&2;
     eval "$(ssh-agent -s)"
+    export EPHEMERAL_SSH_AGENT_PID="${SSH_AGENT_PID}"
   fi
 
   echo "Loading ssh-key into ssh-agent (pid ${SSH_AGENT_PID:-})" >&2;
