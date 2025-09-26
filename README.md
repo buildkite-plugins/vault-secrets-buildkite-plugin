@@ -29,7 +29,7 @@ export VAULT_SECRET_ID="$(vault read -field "secret_id" auth/approle/role/buildk
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v2.2.1:
+      - vault-secrets#v2.2.2:
           server: "https://my-vault-server"
           path: secret/buildkite
           auth:
@@ -49,7 +49,7 @@ SUPER_SECRET_ID=$(vault read -field "secret_id" auth/approle/role/buildkite/secr
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v2.2.1:
+      - vault-secrets#v2.2.2:
           server: "https://my-vault-server"
           path: secret/buildkite
           auth:
@@ -64,7 +64,7 @@ steps:
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v2.2.1:
+      - vault-secrets#v2.2.2:
           server: "https://my-vault-server"
           path: secret/buildkite
           auth:
@@ -77,7 +77,7 @@ steps:
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v2.2.1:
+      - vault-secrets#v2.2.2:
           server: "https://my-vault-server"
           path: secret/buildkite
           auth:
@@ -92,7 +92,7 @@ This secret should still follow the same conventions as the `env` and `environme
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v2.2.1:
+      - vault-secrets#v2.2.2:
           server: "https://my-vault-server"
           secret: supersecret
           path: secret/buildkite
@@ -132,7 +132,7 @@ This secret should still follow the same conventions as the `env` and `environme
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v2.2.1:
+      - vault-secrets#v2.2.2:
           server: "https://my-vault-server"
           secret: supersecret
           path: secret/buildkite
@@ -154,7 +154,7 @@ The keys in the `env` secret are exposed in the `checkout` and `command` as envi
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v2.2.1:
+      - vault-secrets#v2.2.2:
           server: "https://my-vault-server"
           path: secret/buildkite
           auth:
@@ -169,7 +169,7 @@ steps:
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v2.2.1:
+      - vault-secrets#v2.2.2:
           server: "https://my-vault-server"
           path: secret/buildkite
           auth:
@@ -182,7 +182,7 @@ steps:
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v2.2.1:
+      - vault-secrets#v2.2.2:
           server: "https://my-vault-server"
           path: secret/buildkite
           auth:
@@ -360,7 +360,7 @@ When enabled, the plugin will:
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v2.2.1:
+      - vault-secrets#v2.2.2:
           server: "https://my-vault-server"
           debug: true
           auth:
@@ -408,7 +408,7 @@ Example:
 steps:
   - command: ./run_build.sh
     plugins:
-      - vault-secrets#v2.2.1:
+      - vault-secrets#v2.2.2:
           server: https://my-vault-server
           auth:
             method: 'approle'

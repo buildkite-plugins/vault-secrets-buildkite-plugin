@@ -40,7 +40,7 @@ processEnvSecrets() {
     if ! envscript=$(echo "${envscript:-}" && secret_download "${vaultServer}" "${key}" 2>&1) ; then
       echo "+++ :warning: Failed to download env from $key" >&2;
       echo "    Error details:" >&2;
-      echo "$envscript" | sed 's/^/    /' >&2;
+      while IFS= read -r line; do echo "    $line"; done <<< "$envscript" >&2;
 
       # Additional debugging for common issues
       echo "    Debugging information:" >&2;
@@ -201,7 +201,7 @@ if [[ -n "$vault_server" ]] ; then
       echo "No secrets found in any of the searched paths" >&2
     else
       echo "Found secrets:" >&2
-      echo "$secrets" | sed 's/^/  -> /' >&2
+      while IFS= read -r line; do echo "  -> $line"; done <<< "$secrets" >&2
     fi
   fi
 
