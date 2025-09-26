@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ -n "${EPHEMERAL_SSH_AGENT_PID:-}" ]] && ps -p "$EPHEMERAL_SSH_AGENT_PID" &>/dev/null; then
+if [[ -n "${EPHEMERAL_SSH_AGENT_PID:-}" ]] && kill -0 "$EPHEMERAL_SSH_AGENT_PID" 2>/dev/null; then
   echo "~~~ Stopping ssh-agent ${EPHEMERAL_SSH_AGENT_PID}"
   SSH_AGENT_PID="${EPHEMERAL_SSH_AGENT_PID}" ssh-agent -k
 else
