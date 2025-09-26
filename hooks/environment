@@ -26,10 +26,38 @@ processEnvSecrets() {
   local key="$2"
   local envscript=''
   echo "Downloading env secret from ${key}" >&2;
+
+  # Enhanced error checking only in debug mode
+  if [[ "${DEBUG_MODE}" =~ ^(true|1)$ ]]; then
+    # First check if the secret exists
+    if ! vault kv get -address="$vaultServer" "$key" >/dev/null 2>&1; then
+      echo "+++ :warning: Secret $key does not exist or is not accessible" >&2;
+      echo "    Check the secret path and permissions" >&2;
+      exit 1
+    fi
+
+    # Try to download the secret with detailed error reporting
+    if ! envscript=$(echo "${envscript:-}" && secret_download "${vaultServer}" "${key}" 2>&1) ; then
+      echo "+++ :warning: Failed to download env from $key" >&2;
+      echo "    Error details:" >&2;
+      echo "$envscript" | sed 's/^/    /' >&2;
+
+      # Additional debugging for common issues
+      echo "    Debugging information:" >&2;
+      echo "    - Vault server: $vaultServer" >&2;
+      echo "    - Secret path: $key" >&2;
+      echo "    - Vault token status:" >&2;
+      vault token lookup -address="$vaultServer" 2>&1 | sed 's/^/      /' >&2 || echo "      Token lookup failed" >&2;
+      exit 1
+    fi
+  else
+    # Original behavior for compatibility
     if ! envscript=$(echo "${envscript:-}" && secret_download "${vaultServer}" "${key}") ; then
       echo "+++ :warning: Failed to download env from $key" >&2;
       exit 1
-   fi
+    fi
+  fi
+
   echo "Evaluating ${#envscript} bytes of env"
   set -o allexport
   eval "$envscript"
@@ -81,14 +109,52 @@ fi
 export VAULT_NAMESPACE="${BUILDKITE_PLUGIN_VAULT_SECRETS_NAMESPACE:-root}"
 echo "Using namespace: $VAULT_NAMESPACE"
 
+# Enable debug logging if requested (via plugin config or environment variable)
+DEBUG_MODE="${BUILDKITE_PLUGIN_VAULT_SECRETS_DEBUG:-false}"
+if [[ "${DEBUG_MODE}" =~ ^(true|1)$ ]]; then
+  echo "~~~ :mag: Debug mode enabled" >&2
+  set -x
+fi
+
 vault_server="${BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER:-}"
 vault_path="${VAULT_BASE_PATH:-}"
 [ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_PREFIX:-}" ] && vault_path="${vault_path}/${BUILDKITE_PLUGIN_VAULT_SECRETS_PREFIX}"
 [ -n "${BUILDKITE_PIPELINE_SLUG:-}" ] && vault_path="${vault_path}/${BUILDKITE_PIPELINE_SLUG}"
 
+if [[ "${DEBUG_MODE}" =~ ^(true|1)$ ]]; then
+  echo "~~~ :gear: Configuration" >&2
+  echo "VAULT_SERVER: ${vault_server}" >&2
+  echo "VAULT_BASE_PATH: ${VAULT_BASE_PATH}" >&2
+  echo "VAULT_PATH: ${vault_path}" >&2
+  echo "BUILDKITE_PLUGIN_VAULT_SECRETS_PREFIX: ${BUILDKITE_PLUGIN_VAULT_SECRETS_PREFIX:-<not set>}" >&2
+  echo "BUILDKITE_PIPELINE_SLUG: ${BUILDKITE_PIPELINE_SLUG:-<not set>}" >&2
+fi
+
 if [[ -n "$vault_server" ]] ; then
+  # Validate Vault server connectivity (only in debug mode)
+  if [[ "${DEBUG_MODE}" =~ ^(true|1)$ ]]; then
+    echo "~~~ :health_check_mark: Validating Vault server connectivity" >&2
+    if ! vault status -address="$vault_server" >/dev/null 2>&1; then
+      echo "+++ :warning: Unable to connect to Vault server at $vault_server" >&2
+      echo "    This could be due to network issues, incorrect server URL, or Vault being unavailable" >&2
+      exit 1
+    fi
+    echo "Vault server connectivity verified" >&2
+  fi
+
   echo "~~~ Authenticating to :vault: $vault_server" >&2;
   vault_auth "${vault_server:-}"
+
+  # Validate authentication was successful (only in debug mode)
+  if [[ "${DEBUG_MODE}" =~ ^(true|1)$ ]]; then
+    if ! vault token lookup -address="$vault_server" >/dev/null 2>&1; then
+      echo "+++ :warning: Vault authentication appears to have failed" >&2
+      echo "    Token validation failed - check authentication method and credentials" >&2
+      exit 1
+    fi
+    echo "Vault authentication validated" >&2
+  fi
+
   echo "~~~ Downloading secrets from :vault: $vault_server" >&2;
 
   env_before="$(env | sort)"  # used by dumpEnvSecrets
@@ -100,19 +166,79 @@ if [[ -n "$vault_server" ]] ; then
   secrets=''
   for key in "${secret_paths[@]}" ; do
     echo "Checking vault secrets ${key}" >&2
-    secrets=$(echo "${secrets:-}" && list_secrets "$vault_server" "$key")
+
+    # Enhanced path checking only in debug mode
+    if [[ "${DEBUG_MODE}" =~ ^(true|1)$ ]]; then
+      # Check if the secret path exists before trying to list it
+      if vault kv list -address="$vault_server" "$key" >/dev/null 2>&1; then
+        echo "  -> Path exists, listing secrets..." >&2
+        if new_secrets=$(list_secrets "$vault_server" "$key" 2>&1); then
+          secrets=$(echo "${secrets:-}" && echo "$new_secrets")
+          echo "  -> Found $(echo "$new_secrets" | wc -l | tr -d ' ') secrets" >&2
+        else
+          echo "  -> Failed to list secrets in $key: $new_secrets" >&2
+        fi
+      else
+        echo "  -> Path $key does not exist or is not accessible" >&2
+        # Check if it's a permissions issue by trying to check if the mount exists
+        if vault kv list -address="$vault_server" "$(dirname "$key")" >/dev/null 2>&1; then
+          echo "  -> Parent path exists, this may be a permissions issue" >&2
+        else
+          echo "  -> Parent path also doesn't exist or isn't accessible" >&2
+        fi
+      fi
+    else
+      # Original behavior - just try to list secrets
+      if new_secrets=$(list_secrets "$vault_server" "$key" 2>&1); then
+        secrets=$(echo "${secrets:-}" && echo "$new_secrets")
+      fi
+    fi
   done
+
+  if [[ "${DEBUG_MODE}" =~ ^(true|1)$ ]]; then
+    echo "~~~ :key: Processing discovered secrets" >&2
+    if [[ -z "${secrets:-}" ]]; then
+      echo "No secrets found in any of the searched paths" >&2
+    else
+      echo "Found secrets:" >&2
+      echo "$secrets" | sed 's/^/  -> /' >&2
+    fi
+  fi
 
   for secret in $secrets ; do
     # shellcheck disable=SC2034
     _key_base="$(dirname "$secret")"
     _key_name="$(basename "$secret")"
 
+    if [[ "${DEBUG_MODE}" =~ ^(true|1)$ ]]; then
+      echo "Processing secret: $secret (type: $_key_name)" >&2
+    fi
+
     case "${_key_name:-}" in
-      env|environment) processEnvSecrets "$vault_server" "$secret" ;;
-      private_ssh_key|id_rsa_github) processSshSecrets "$vault_server" "$secret" ;;
-      git-credentials) processGitCredentialsSecrets "$vault_server" "$secret" ;;
-      "$custom_secret") processEnvSecrets "$vault_server" "$secret"
+      env|environment)
+        if [[ "${DEBUG_MODE}" =~ ^(true|1)$ ]]; then
+          echo "  -> Processing as environment secret" >&2
+        fi
+        processEnvSecrets "$vault_server" "$secret" ;;
+      private_ssh_key|id_rsa_github)
+        if [[ "${DEBUG_MODE}" =~ ^(true|1)$ ]]; then
+          echo "  -> Processing as SSH key" >&2
+        fi
+        processSshSecrets "$vault_server" "$secret" ;;
+      git-credentials)
+        if [[ "${DEBUG_MODE}" =~ ^(true|1)$ ]]; then
+          echo "  -> Processing as git credentials" >&2
+        fi
+        processGitCredentialsSecrets "$vault_server" "$secret" ;;
+      "$custom_secret")
+        if [[ "${DEBUG_MODE}" =~ ^(true|1)$ ]]; then
+          echo "  -> Processing as custom secret (${custom_secret})" >&2
+        fi
+        processEnvSecrets "$vault_server" "$secret" ;;
+      *)
+        if [[ "${DEBUG_MODE}" =~ ^(true|1)$ ]]; then
+          echo "  -> Skipping unknown secret type: $_key_name" >&2
+        fi ;;
     esac
   done
 

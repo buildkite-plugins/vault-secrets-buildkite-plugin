@@ -16,6 +16,9 @@ configuration:
       type: string
     namespace:
       type: string
+    debug:
+      type: boolean
+      description: "Enable detailed debug logging to troubleshoot Vault connection issues"
     auth:
       type: object
       properties:

@@ -345,6 +345,28 @@ Defaults to: `data/buildkite`
 ### `namespace` (optional, string)
 Configure the [Enterprise Namespace](https://developer.hashicorp.com/vault/docs/enterprise/namespaces) to be used when querying the vault server
 
+### `debug` (optional, boolean)
+Enable detailed debug logging to troubleshoot connection and authentication issues with Vault.
+
+When enabled, the plugin will:
+- Show detailed configuration information
+- Validate Vault server connectivity before authentication
+- Verify authentication success after login
+- Test secret path accessibility before listing secrets
+- Provide enhanced error messages with context for failures
+- Enable bash trace mode for full command visibility
+
+```yml
+steps:
+  - command: ./run_build.sh
+    plugins:
+      - vault-secrets#v2.2.1:
+          server: "https://my-vault-server"
+          debug: true
+          auth:
+            method: "approle"
+            role-id: "my-role-id"
+```
 
 ### `auth` (required, object)
 Dictionary/map with the configuration of the parameters the plugin should use to authenticate with Vault.

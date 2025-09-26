@@ -115,9 +115,9 @@ list_secrets() {
 
   local _list
 
-  if ! _list=$(vault kv list -address="$server" -format=yaml "$key" | sed 's/^- //g'); then
-    echo "unable to list secrets" >&2;
-    return "${PIPESTATUS[0]}"
+  if ! _list=$(vault kv list -address="$server" -format=yaml "$key" 2>&1 | sed 's/^- //g'); then
+    echo "unable to list secrets at $key: $_list" >&2;
+    return 1
   fi
   local retVal=${PIPESTATUS[0]}
 
@@ -152,8 +152,9 @@ secret_download() {
   local server="$1"
   local key="$2"
 
-  # Attempt to retrieve the secret from Vault
-  if ! _secret=$(vault kv get -address="$server" -field=data -format=yaml "$key" | \
+  # Attempt to retrieve the secret from Vault with detailed error capture
+  local vault_error
+  if ! _secret=$(vault kv get -address="$server" -field=data -format=yaml "$key" 2>&1 | \
     sed -r '
         s/: /=/;       # Replace ':' with '='
         s/\"/\\"/g;    # Escape double quotes
@@ -161,8 +162,20 @@ secret_download() {
         s/=(.*)$/="\1"/g; # Enclose values in double quotes
     '); then
 
-    # If the command fails, print an error message and exit
-    echo "Failed to download secrets: $_secret"
+    # Capture the vault command error for better debugging
+    vault_error=$(vault kv get -address="$server" -field=data -format=yaml "$key" 2>&1)
+    echo "Failed to download secret from $key" >&2
+    echo "Vault error: $vault_error" >&2
+
+    # Additional context for common errors
+    if [[ "$vault_error" =~ "EOF" ]]; then
+      echo "EOF error often indicates network connectivity issues or server problems" >&2
+    elif [[ "$vault_error" =~ "permission denied" ]]; then
+      echo "Permission denied - check if the token has access to this secret path" >&2
+    elif [[ "$vault_error" =~ "path not found" ]]; then
+      echo "Secret path not found - verify the path exists in Vault" >&2
+    fi
+
     exit 1
   fi
 
