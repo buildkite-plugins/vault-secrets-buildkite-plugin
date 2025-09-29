@@ -113,7 +113,6 @@ echo "Using namespace: $VAULT_NAMESPACE"
 DEBUG_MODE="${BUILDKITE_PLUGIN_VAULT_SECRETS_DEBUG:-false}"
 if [[ "${DEBUG_MODE}" =~ ^(true|1)$ ]]; then
   echo "~~~ :mag: Debug mode enabled" >&2
-  set -x
 fi
 
 vault_server="${BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER:-}"
@@ -133,7 +132,7 @@ fi
 if [[ -n "$vault_server" ]] ; then
   # Validate Vault server connectivity (only in debug mode)
   if [[ "${DEBUG_MODE}" =~ ^(true|1)$ ]]; then
-    echo "~~~ :health_check_mark: Validating Vault server connectivity" >&2
+    echo "~~~ :white_check_mark: Validating Vault server connectivity" >&2
     if ! vault status -address="$vault_server" >/dev/null 2>&1; then
       echo "+++ :warning: Unable to connect to Vault server at $vault_server" >&2
       echo "    This could be due to network issues, incorrect server URL, or Vault being unavailable" >&2
