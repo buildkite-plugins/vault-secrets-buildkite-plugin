@@ -67,6 +67,25 @@ setup() {
   unstub vault
 }
 
+@test "Load default env file from JSON output from vault server" {
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_OUTPUT="json"
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=true
+  export TESTDATA='{"foo": "bar", "test_data2": "llamas"}'
+
+  stub vault \
+    "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
+    "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo 'env'" \
+    "kv get -address=https://vault_svr_url -field=data -format=json data/buildkite/env : echo '${TESTDATA}'"
+
+  run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
+
+  assert_success
+  assert_output --partial "foo=bar"
+  refute_output --partial "unsetvar=blah"
+
+  unstub vault
+}
+
 @test "Load default environment file from vault server" {
   export TESTDATA='MY_SECRET: fooblah'
 
@@ -111,7 +130,7 @@ setup() {
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo 'env'" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : exit 0" \
-    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/env : echo '${TESTDATA}'" \
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/env : echo '${TESTDATA}'"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
@@ -128,7 +147,7 @@ setup() {
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo 'environment'" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : exit 0" \
-    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/environment : echo ${TESTDATA}" \
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/environment : echo ${TESTDATA}"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
@@ -348,7 +367,7 @@ setup() {
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo -e 'private_ssh_key env'" \
     "kv get -address=https://vault_svr_url -field=ssh_key data/buildkite/private_ssh_key : echo ${TESTDATA_KEY}" \
-    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/env : echo ${TESTDATA_ENV}" \
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/env : echo ${TESTDATA_ENV}"
 
   stub ssh-add \
     '- : echo added ssh key'
@@ -375,7 +394,7 @@ setup() {
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo 'private_ssh_key env'" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : exit 0 " \
     "kv get -address=https://vault_svr_url -field=ssh_key data/buildkite/testpipe/private_ssh_key : echo ${TESTDATA_KEY}" \
-    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/env : echo ${TESTDATA_ENV}" \
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/env : echo ${TESTDATA_ENV}"
 
   stub ssh-add \
     '- : echo added ssh key'
@@ -460,7 +479,7 @@ setup() {
   stub vault \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : echo -e 'env'" \
     "kv list -address=https://vault_svr_url -format=yaml data/buildkite : exit 0" \
-    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/env : echo '${TESTDATA_ENV_1}'; echo '${TESTDATA_ENV_2}'" \
+    "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/env : echo '${TESTDATA_ENV_1}'; echo '${TESTDATA_ENV_2}'"
 
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
@@ -553,7 +572,6 @@ setup() {
     "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/testpipe/${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET} : echo ${TESTDATA}" \
     "kv get -address=https://vault_svr_url -field=data -format=yaml data/buildkite/${BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET} : echo ${TESTDATA2}"
 
-
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
   assert_success
@@ -563,7 +581,6 @@ setup() {
 
   unstub vault
 }
-
 
 @test "Load env, environment, and custom secret key files for project and default from vault server" {
   export BUILDKITE_PLUGIN_VAULT_SECRETS_SECRET="supersecret"

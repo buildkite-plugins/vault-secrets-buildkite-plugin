@@ -174,7 +174,7 @@ secret_download() {
     fi
 
     # Process the JSON secret to replace underscores and periods in keys
-    _secret=$(jq -c '
+    if ! _secret=$(jq -c '
         walk(
             if type == "object" then
                 with_entries(.key |= gsub("[^A-Za-z0-9_]"; "_"))
@@ -186,7 +186,11 @@ secret_download() {
         [paths(scalars) as $p |
             {key: $p | join("_"), value: getpath($p)}
         ] | .[] | "\(.key)=\"\(.value)\""
-    ')
+    ' 2>&1); then
+      echo "Failed to parse JSON secret from $key" >&2
+      echo "JSON parse error: $_secret" >&2
+      exit 1
+    fi
   else
     # YAML output - apply sed transformation
     if ! _secret=$(vault kv get -address="$server" -field=data -format=yaml "$key" 2>&1 | \
@@ -222,7 +226,7 @@ secret_download() {
       _secret=$(vault kv get -address="$server" -field=data -format=json "$key")
 
       # Process the JSON secret to replace underscores and periods in keys
-      _secret=$(jq -c '
+      if ! _secret=$(jq -c '
           walk(
               if type == "object" then
                   with_entries(.key |= gsub("[^A-Za-z0-9_]"; "_"))
@@ -234,7 +238,11 @@ secret_download() {
           [paths(scalars) as $p |
               {key: $p | join("_"), value: getpath($p)}
           ] | .[] | "\(.key)=\"\(.value)\""
-      ')
+      ' 2>&1); then
+        echo "Failed to parse JSON secret from $key" >&2
+        echo "JSON parse error: $_secret" >&2
+        exit 1
+      fi
     fi
   fi
 
