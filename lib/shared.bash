@@ -21,89 +21,90 @@ vault_auth() {
   #   sensitive information itself, so the role name to use can either be passed via BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME
   #   or will fall back to using the name of the IAM role that the instance is using.
 
+
   case "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD:-}" in
 
-  # AppRole authentication
-  approle)
-    if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV:-}" ]; then
-      secret_var="${VAULT_SECRET_ID?No Secret ID found}"
-    else
-      secret_var="${!BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV}"
-    fi
+    # AppRole authentication
+    approle)
+        if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV:-}" ]; then
+          secret_var="${VAULT_SECRET_ID?No Secret ID found}"
+        else
+          secret_var="${!BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_SECRET_ENV}"
+        fi
 
-    if [[ -z "${secret_var:-}" ]]; then
-      echo "+++  🚨 No vault secret id found"
-      exit 1
-    fi
+        if [[ -z "${secret_var:-}" ]]; then
+          echo "+++  🚨 No vault secret id found"
+          exit 1
+        fi
 
-    # export the vault token to be used for this job - this command writes to the auth/approle/login endpoint
-    # on success, vault will return the token which we export as VAULT_TOKEN for this shell
-    if ! VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
-      role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID" \
-      secret_id="${secret_var:-}"); then
-      echo "+++🚨 Failed to get vault token"
-      exit 1
-    fi
+        # export the vault token to be used for this job - this command writes to the auth/approle/login endpoint
+        # on success, vault will return the token which we export as VAULT_TOKEN for this shell
+        if ! VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
+        role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID" \
+        secret_id="${secret_var:-}"); then
+          echo "+++🚨 Failed to get vault token"
+          exit 1
+        fi
 
-    export VAULT_TOKEN
+        export VAULT_TOKEN
 
-    echo "Successfully authenticated with RoleID ${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID} and updated vault token"
+        echo "Successfully authenticated with RoleID ${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID} and updated vault token"
 
-    return "${PIPESTATUS[0]}"
-    ;;
+        return "${PIPESTATUS[0]}"
+      ;;
 
-  # AWS Authentication
-  aws)
-    # set the role name to use; either from the plugin configuration, or fall back to the EC2 instance role
-    if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME:-}" ]; then
-      # get the name of the IAM role the EC2 instance is using, if any
-      EC2_INSTANCE_IAM_ROLE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials)
-      aws_role_name="${EC2_INSTANCE_IAM_ROLE}"
-    else
-      aws_role_name="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME}"
-    fi
+    # AWS Authentication
+    aws)
+        # set the role name to use; either from the plugin configuration, or fall back to the EC2 instance role
+        if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME:-}" ]; then
+          # get the name of the IAM role the EC2 instance is using, if any
+          EC2_INSTANCE_IAM_ROLE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials)
+          aws_role_name="${EC2_INSTANCE_IAM_ROLE}"
+        else
+          aws_role_name="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME}"
+        fi
 
-    if [[ -z "${aws_role_name:-}" ]]; then
-      echo "+++🚨 No EC2 instance IAM role defined; value is $aws_role_name"
-      exit 1
-    fi
+        if [[ -z "${aws_role_name:-}" ]]; then
+          echo "+++🚨 No EC2 instance IAM role defined; value is $aws_role_name"
+          exit 1
+        fi
 
-    # export the vault token to be used for this job - this is a standard vault auth command
-    # on success, vault will return the token which we export as VAULT_TOKEN for this shell
-    if ! VAULT_TOKEN=$(vault login -field=token -address="$server" -method=aws role="$aws_role_name"); then
-      echo "+++🚨 Failed to get vault token"
-    fi
+        # export the vault token to be used for this job - this is a standard vault auth command
+        # on success, vault will return the token which we export as VAULT_TOKEN for this shell
+        if ! VAULT_TOKEN=$(vault login -field=token -address="$server" -method=aws role="$aws_role_name"); then
+          echo "+++🚨 Failed to get vault token"
+        fi
 
-    export VAULT_TOKEN
+        export VAULT_TOKEN
 
-    echo "Successfully authenticated with IAM Role ${aws_role_name} and updated vault token"
+        echo "Successfully authenticated with IAM Role ${aws_role_name} and updated vault token"
 
-    return "${PIPESTATUS[0]}"
-    ;;
+        return "${PIPESTATUS[0]}"
+      ;;
 
-  jwt)
-    echo "--- performing JWT authentication"
-    if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_JWT_ENV:-}" ]; then
-      jwt_var="${VAULT_JWT?No JWT found}"
-    else
-      jwt_var="${!BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_JWT_ENV}"
-    fi
+    jwt)
+        echo "--- performing JWT authentication"
+        if [ -z "${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_JWT_ENV:-}" ]; then
+          jwt_var="${VAULT_JWT?No JWT found}"
+        else
+          jwt_var="${!BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_JWT_ENV}"
+        fi
 
-    if [[ -z "${jwt_var:-}" ]]; then
-      echo "+++  🚨 No JWT found."
-      exit 1
-    fi
+        if [[ -z "${jwt_var:-}" ]]; then
+          echo "+++  🚨 No JWT found."
+          exit 1
+        fi
 
-    if ! VAULT_TOKEN=$(vault write -field=token auth/jwt/login role="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_JWT_ROLE:-"buildkite"}" jwt="${jwt_var:-}"); then
-      echo "+++🚨 Failed to get vault token"
-      exit 1
-    fi
+        if ! VAULT_TOKEN=$(vault write -field=token auth/jwt/login role="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_JWT_ROLE:-"buildkite"}" jwt="${jwt_var:-}"); then
+          echo "+++🚨 Failed to get vault token"
+          exit 1
+        fi
 
-    export VAULT_TOKEN
+        export VAULT_TOKEN
 
-    echo "Successfully authenticated with JWT"
+        echo "Successfully authenticated with JWT"
 
-    return "${PIPESTATUS[0]}"
+        return "${PIPESTATUS[0]}"
     ;;
   esac
 }
