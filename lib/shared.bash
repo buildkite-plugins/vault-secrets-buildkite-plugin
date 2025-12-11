@@ -185,7 +185,7 @@ secret_download() {
     ' <<< "$_secret" | jq -r '
         [paths(scalars) as $p |
             {key: $p | join("_"), value: getpath($p)}
-        ] | .[] | "\(.key)=\"\(.value)\""
+        ] | .[] | "\(.key)=\(.value | @sh)"
     ' 2>&1); then
       echo "Failed to parse JSON secret from $key" >&2
       echo "JSON parse error: $_secret" >&2
@@ -237,7 +237,7 @@ secret_download() {
       ' <<< "$_secret" | jq -r '
           [paths(scalars) as $p |
               {key: $p | join("_"), value: getpath($p)}
-          ] | .[] | "\(.key)=\"\(.value)\""
+          ] | .[] | "\(.key)=\(.value | @sh)"
       ' 2>&1); then
         echo "Failed to parse JSON secret from $key" >&2
         echo "JSON parse error: $_secret" >&2

@@ -86,6 +86,21 @@ setup() {
   unstub vault
 }
 
+@test "Load default env file with a multi-line secret with JSON output from vault server" {
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_OUTPUT="json"
+  export TESTDATA='{"license": "\"something or other \\\n  comment\" another=\"more \\\n  info\" date=\"2020482983\" \\\n  end=\"finished\""}'
+
+  stub vault \
+    "kv list -address=https://vault_svr_url -format=yaml data/buildkite/testpipe : exit 0" \
+    "kv list -address=https://vault_svr_url -format=yaml data/buildkite : echo 'env'" \
+    "kv get -address=https://vault_svr_url -field=data -format=json data/buildkite/env : echo '${TESTDATA}'"
+
+  run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
+
+  assert_success
+  unstub vault
+}
+
 @test "Load default environment file from vault server" {
   export TESTDATA='MY_SECRET: fooblah'
 
