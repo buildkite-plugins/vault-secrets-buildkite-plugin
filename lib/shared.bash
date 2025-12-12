@@ -116,12 +116,12 @@ list_secrets() {
   local _list
 
   if ! _list=$(vault kv list -address="$server" -format=yaml "$key" 2>&1 | sed 's/^- //g'); then
-    echo "unable to list secrets at $key: $_list" >&2;
+    echo "unable to list secrets at $key: $_list" >&2
     return 1
   fi
   local retVal=${PIPESTATUS[0]}
 
-  for lineItem in ${_list} ; do
+  for lineItem in ${_list}; do
     echo "$key/${lineItem}"
   done
 
@@ -137,69 +137,110 @@ secret_exists() {
   local _key_name
   _key_name="$(basename "$key")"
   local _list
-  _list=$(vault kv list -address="$server" -format=yaml "$_key_base" )
+  _list=$(vault kv list -address="$server" -format=yaml "$_key_base")
 
-  echo "${_list}" | grep "^- ${_key_name}$" >& /dev/null
+  echo "${_list}" | grep "^- ${_key_name}$" >&/dev/null
   # shellcheck disable=SC2181
-  if [ "$?" -ne 0 ] ; then
+  if [ "$?" -ne 0 ]; then
     return 1
   else
     return 0
   fi
 }
 
+process_json_to_shell_vars() {
+  local json_input="$1"
+
+  # Process JSON secret to replace non-alphanumeric characters in keys with underscores,
+  # flatten nested structures by joining paths with underscores, and format as shell variables
+  jq -c '
+      walk(
+          if type == "object" then
+              with_entries(.key |= gsub("[^A-Za-z0-9_]"; "_"))
+          else
+              .
+          end
+      )
+  ' <<< "$json_input" | jq -r '
+      [paths(scalars) as $p |
+          {key: $p | join("_"), value: getpath($p)}
+      ] | .[] | "\(.key)=\(.value | @sh)"
+  ' 2>&1
+}
+
 secret_download() {
   local server="$1"
   local key="$2"
+  # should default to YAML, but allows the option for getting JSON output.
+  local output="${BUILDKITE_PLUGIN_VAULT_SECRETS_OUTPUT:-"yaml"}"
 
   # Attempt to retrieve the secret from Vault with detailed error capture
   local vault_error
-  if ! _secret=$(vault kv get -address="$server" -field=data -format=yaml "$key" 2>&1 | \
-    sed -r '
-        s/: /=/;       # Replace ':' with '='
-        s/\"/\\"/g;    # Escape double quotes
-        s/\$/\\$/g;    # Escape dollar signs
-        s/=(.*)$/="\1"/g; # Enclose values in double quotes
-    '); then
 
-    # Capture the vault command error for better debugging
-    vault_error=$(vault kv get -address="$server" -field=data -format=yaml "$key" 2>&1)
-    echo "Failed to download secret from $key" >&2
-    echo "Vault error: $vault_error" >&2
+  if [[ "${output}" == "json" ]]; then
+    # JSON output - no sed transformation needed
+    if ! _secret=$(vault kv get -address="$server" -field=data -format=json "$key" 2>&1); then
+      vault_error=$_secret
+      echo "Failed to download secret from $key" >&2
+      echo "Vault error: $vault_error" >&2
 
-    # Additional context for common errors
-    if [[ "$vault_error" =~ "EOF" ]]; then
-      echo "EOF error often indicates network connectivity issues or server problems" >&2
-    elif [[ "$vault_error" =~ "permission denied" ]]; then
-      echo "Permission denied - check if the token has access to this secret path" >&2
-    elif [[ "$vault_error" =~ "path not found" ]]; then
-      echo "Secret path not found - verify the path exists in Vault" >&2
+      if [[ "$vault_error" =~ "EOF" ]]; then
+        echo "EOF error often indicates network connectivity issues or server problems" >&2
+      elif [[ "$vault_error" =~ "permission denied" ]]; then
+        echo "Permission denied - check if the token has access to this secret path" >&2
+      elif [[ "$vault_error" =~ "path not found" ]]; then
+        echo "Secret path not found - verify the path exists in Vault" >&2
+      fi
+      exit 1
     fi
 
-    exit 1
-  fi
-
-  # Check if the first character of the _secret variable is a '{'
-  if [[ "${_secret:0:1}" == "{" ]]; then
-    # It's JSON, handle accordingly
-
-    # Retrieve the secret from Vault, extract the 'data' field, and format it as JSON
-    _secret=$(vault kv get -address="$server" -field=data -format=json "$key")
-
     # Process the JSON secret to replace underscores and periods in keys
-    _secret=$(jq -c '
-        walk(
-            if type == "object" then
-                with_entries(.key |= gsub("[^A-Za-z0-9_]"; "_"))
-            else
-                .
-            end
-        )
-    ' <<< "$_secret" | jq -r '
-        [paths(scalars) as $p |
-            {key: $p | join("_"), value: getpath($p)}
-        ] | .[] | "\(.key)=\"\(.value)\""
-    ')
+    if ! _secret=$(process_json_to_shell_vars "$_secret"); then
+      echo "Failed to parse JSON secret from $key" >&2
+      echo "JSON parse error: $_secret" >&2
+      exit 1
+    fi
+  else
+    # YAML output - apply sed transformation
+    if ! _secret=$(vault kv get -address="$server" -field=data -format=yaml "$key" 2>&1 | \
+      sed -r '
+          s/: /=/;       # Replace ':' with '='
+          s/\"/\\"/g;    # Escape double quotes
+          s/\$/\\$/g;    # Escape dollar signs
+          s/=(.*)$/="\1"/g; # Enclose values in double quotes
+      '); then
+
+      # Capture the vault command error for better debugging
+      vault_error=$(vault kv get -address="$server" -field=data -format=yaml "$key" 2>&1)
+      echo "Failed to download secret from $key" >&2
+      echo "Vault error: $vault_error" >&2
+
+      # Additional context for common errors
+      if [[ "$vault_error" =~ "EOF" ]]; then
+        echo "EOF error often indicates network connectivity issues or server problems" >&2
+      elif [[ "$vault_error" =~ "permission denied" ]]; then
+        echo "Permission denied - check if the token has access to this secret path" >&2
+      elif [[ "$vault_error" =~ "path not found" ]]; then
+        echo "Secret path not found - verify the path exists in Vault" >&2
+      fi
+
+      exit 1
+    fi
+
+    # Check if the first character of the _secret variable is a '{'
+    if [[ "${_secret:0:1}" == "{" ]]; then
+      # The YAML output contains JSON, handle accordingly
+
+      # Retrieve the secret from Vault as JSON format instead
+      _secret=$(vault kv get -address="$server" -field=data -format=json "$key")
+
+      # Process the JSON secret to replace underscores and periods in keys
+      if ! _secret=$(process_json_to_shell_vars "$_secret"); then
+        echo "Failed to parse JSON secret from $key" >&2
+        echo "JSON parse error: $_secret" >&2
+        exit 1
+      fi
+    fi
   fi
 
   echo "$_secret"
@@ -220,13 +261,13 @@ ssh_key_download() {
 add_ssh_private_key_to_agent() {
   local ssh_key="$1"
 
-  if [[ -z "${SSH_AGENT_PID:-}" ]] ; then
-    echo "Starting an ephemeral ssh-agent" >&2;
+  if [[ -z "${SSH_AGENT_PID:-}" ]]; then
+    echo "Starting an ephemeral ssh-agent" >&2
     eval "$(ssh-agent -s)"
     export EPHEMERAL_SSH_AGENT_PID="${SSH_AGENT_PID}"
   fi
 
-  echo "Loading ssh-key into ssh-agent (pid ${SSH_AGENT_PID:-})" >&2;
+  echo "Loading ssh-key into ssh-agent (pid ${SSH_AGENT_PID:-})" >&2
 
   echo "$ssh_key" | env SSH_ASKPASS="/bin/false" ssh-add -
 }

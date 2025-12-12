@@ -345,6 +345,15 @@ Defaults to: `data/buildkite`
 ### `namespace` (optional, string)
 Configure the [Enterprise Namespace](https://developer.hashicorp.com/vault/docs/enterprise/namespaces) to be used when querying the vault server
 
+### `output` (optional, string)
+Select the output format used by the Vault CLI when getting secrets from Vault. 
+Expects one of the following values:
+
+* `yaml`
+* `json`
+
+Default: `yaml`
+
 ### `debug` (optional, boolean)
 Enable detailed debug logging to troubleshoot connection and authentication issues with Vault.
 
