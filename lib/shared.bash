@@ -148,6 +148,26 @@ secret_exists() {
   fi
 }
 
+process_json_to_shell_vars() {
+  local json_input="$1"
+
+  # Process JSON secret to replace non-alphanumeric characters in keys with underscores,
+  # flatten nested structures by joining paths with underscores, and format as shell variables
+  jq -c '
+      walk(
+          if type == "object" then
+              with_entries(.key |= gsub("[^A-Za-z0-9_]"; "_"))
+          else
+              .
+          end
+      )
+  ' <<< "$json_input" | jq -r '
+      [paths(scalars) as $p |
+          {key: $p | join("_"), value: getpath($p)}
+      ] | .[] | "\(.key)=\(.value | @sh)"
+  ' 2>&1
+}
+
 secret_download() {
   local server="$1"
   local key="$2"
@@ -175,19 +195,7 @@ secret_download() {
     fi
 
     # Process the JSON secret to replace underscores and periods in keys
-    if ! _secret=$(jq -c '
-        walk(
-            if type == "object" then
-                with_entries(.key |= gsub("[^A-Za-z0-9_]"; "_"))
-            else
-                .
-            end
-        )
-    ' <<< "$_secret" | jq -r '
-        [paths(scalars) as $p |
-            {key: $p | join("_"), value: getpath($p)}
-        ] | .[] | "\(.key)=\(.value | @sh)"
-    ' 2>&1); then
+    if ! _secret=$(process_json_to_shell_vars "$_secret"); then
       echo "Failed to parse JSON secret from $key" >&2
       echo "JSON parse error: $_secret" >&2
       exit 1
@@ -227,19 +235,7 @@ secret_download() {
       _secret=$(vault kv get -address="$server" -field=data -format=json "$key")
 
       # Process the JSON secret to replace underscores and periods in keys
-      if ! _secret=$(jq -c '
-          walk(
-              if type == "object" then
-                  with_entries(.key |= gsub("[^A-Za-z0-9_]"; "_"))
-              else
-                  .
-              end
-          )
-      ' <<< "$_secret" | jq -r '
-          [paths(scalars) as $p |
-              {key: $p | join("_"), value: getpath($p)}
-          ] | .[] | "\(.key)=\(.value | @sh)"
-      ' 2>&1); then
+      if ! _secret=$(process_json_to_shell_vars "$_secret"); then
         echo "Failed to parse JSON secret from $key" >&2
         echo "JSON parse error: $_secret" >&2
         exit 1
