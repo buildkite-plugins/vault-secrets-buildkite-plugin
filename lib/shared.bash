@@ -165,7 +165,7 @@ process_json_to_shell_vars() {
       [paths(scalars) as $p |
           {key: $p | join("_"), value: getpath($p)}
       ] | .[] | "\(.key)=\(.value | @sh)"
-  ' 2>&1
+  '
 }
 
 secret_download() {
@@ -174,13 +174,23 @@ secret_download() {
   # should default to YAML, but allows the option for getting JSON output.
   local output="${BUILDKITE_PLUGIN_VAULT_SECRETS_OUTPUT:-"yaml"}"
 
-  # Attempt to retrieve the secret from Vault with detailed error capture
+  # Attempt to retrieve the secret from Vault with detailed error capture.
+  # IMPORTANT: `vault kv get` writes the secret to stdout. Never echo captured
+  # stdout in an error path - only Vault's stderr is safe to surface, otherwise
+  # secret material (e.g. partially streamed before a mid-transfer EOF/5xx) would
+  # leak into the build log.
   local vault_error
+  local _vault_stderr
+  _vault_stderr=$(mktemp)
+  # secret_download is always invoked inside a command substitution subshell, so
+  # an EXIT trap reliably cleans up the temp file on every path (success, the
+  # several `exit 1` error paths, or an interrupt) without scattering `rm -f`.
+  trap 'rm -f "$_vault_stderr"' EXIT
 
   if [[ "${output}" == "json" ]]; then
     # JSON output - no sed transformation needed
-    if ! _secret=$(vault kv get -address="$server" -field=data -format=json "$key" 2>&1); then
-      vault_error=$_secret
+    if ! _secret=$(vault kv get -address="$server" -field=data -format=json "$key" 2>"$_vault_stderr"); then
+      vault_error=$(cat "$_vault_stderr")
       echo "Failed to download secret from $key" >&2
       echo "Vault error: $vault_error" >&2
 
@@ -194,15 +204,20 @@ secret_download() {
       exit 1
     fi
 
-    # Process the JSON secret to replace underscores and periods in keys
-    if ! _secret=$(process_json_to_shell_vars "$_secret"); then
+    # Process the JSON secret to replace underscores and periods in keys.
+    # jq's stderr is routed to the temp file (not surfaced) because parse errors
+    # can echo fragments of the input - i.e. the secret - so neither the captured
+    # output nor jq's diagnostics are safe to print.
+    if ! _secret=$(process_json_to_shell_vars "$_secret" 2>"$_vault_stderr"); then
       echo "Failed to parse JSON secret from $key" >&2
-      echo "JSON parse error: $_secret" >&2
+      echo "JSON parse error: details suppressed to avoid leaking secret material" >&2
       exit 1
     fi
   else
-    # YAML output - apply sed transformation
-    if ! _secret=$(vault kv get -address="$server" -field=data -format=yaml "$key" 2>&1 | \
+    # YAML output - apply sed transformation. Vault's stderr is redirected to a
+    # file (not merged into the piped stdout) so a failure never feeds secret
+    # bytes through sed, and so the error handler can surface stderr only.
+    if ! _secret=$(vault kv get -address="$server" -field=data -format=yaml "$key" 2>"$_vault_stderr" | \
       sed -r '
           s/: /=/;       # Replace ':' with '='
           s/\"/\\"/g;    # Escape double quotes
@@ -210,8 +225,8 @@ secret_download() {
           s/=(.*)$/="\1"/g; # Enclose values in double quotes
       '); then
 
-      # Capture the vault command error for better debugging
-      vault_error=$(vault kv get -address="$server" -field=data -format=yaml "$key" 2>&1)
+      # Surface only Vault's stderr - never the captured stdout, which holds the secret.
+      vault_error=$(cat "$_vault_stderr")
       echo "Failed to download secret from $key" >&2
       echo "Vault error: $vault_error" >&2
 
@@ -231,13 +246,20 @@ secret_download() {
     if [[ "${_secret:0:1}" == "{" ]]; then
       # The YAML output contains JSON, handle accordingly
 
-      # Retrieve the secret from Vault as JSON format instead
-      _secret=$(vault kv get -address="$server" -field=data -format=json "$key")
+      # Retrieve the secret from Vault as JSON format instead. Same hardening as
+      # the download paths above: isolate Vault's stderr and check for failure so
+      # a mid-transfer error can never feed secret bytes into the error handler.
+      if ! _secret=$(vault kv get -address="$server" -field=data -format=json "$key" 2>"$_vault_stderr"); then
+        vault_error=$(cat "$_vault_stderr")
+        echo "Failed to download secret from $key" >&2
+        echo "Vault error: $vault_error" >&2
+        exit 1
+      fi
 
       # Process the JSON secret to replace underscores and periods in keys
-      if ! _secret=$(process_json_to_shell_vars "$_secret"); then
+      if ! _secret=$(process_json_to_shell_vars "$_secret" 2>"$_vault_stderr"); then
         echo "Failed to parse JSON secret from $key" >&2
-        echo "JSON parse error: $_secret" >&2
+        echo "JSON parse error: details suppressed to avoid leaking secret material" >&2
         exit 1
       fi
     fi
