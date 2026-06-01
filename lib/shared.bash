@@ -185,6 +185,9 @@ secret_download() {
   # secret_download is always invoked inside a command substitution subshell, so
   # an EXIT trap reliably cleans up the temp file on every path (success, the
   # several `exit 1` error paths, or an interrupt) without scattering `rm -f`.
+  # Intentional early expansion: capture the literal path now before the local variable
+  # goes out of scope when the function returns.
+  # shellcheck disable=SC2064
   trap "rm -f $_vault_stderr" EXIT
 
   if [[ "${output}" == "json" ]]; then
