@@ -28,10 +28,6 @@ configuration:
       type: integer
       minimum: 1
       description: "Seconds to wait between connection retries (default 5)"
-    connect-timeout:
-      type: integer
-      minimum: 1
-      description: "Seconds to wait when probing Vault reachability (default 5)"
     unreachable-exit-code:
       type: integer
       minimum: 1

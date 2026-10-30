@@ -389,13 +389,8 @@ Seconds to wait between connection retries.
 
 Default: `5`
 
-### `connect-timeout` (optional, integer)
-Seconds to wait when checking whether the Vault server is reachable after a failed login.
-
-Default: `5`
-
 ### `unreachable-exit-code` (optional, integer)
-Exit code the hook uses when the Vault server is still unreachable after any retries. Unreachable means the health probe could not connect at all (DNS failure, connection refused or timeout). The default, `75`, is `EX_TEMPFAIL` from `sysexits.h`. It differs from genuine failures, which exit with `1`, so the step can be retried automatically without also retrying those.
+Exit code the hook uses when the Vault server is still unreachable after any retries. Unreachable means the login attempt itself failed to get any HTTP response from Vault (DNS failure, connection refused or timeout). The default, `75`, is `EX_TEMPFAIL` from `sysexits.h`. It differs from genuine failures, which exit with `1`, so the step can be retried automatically without also retrying those.
 
 Default: `75`
 

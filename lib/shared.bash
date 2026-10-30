@@ -3,25 +3,26 @@ set -ueo pipefail
 
 [ -z "${TMPDIR:-}" ] && TMPDIR=${TMPDIR:-/tmp}
 
-# Returns 0 when the Vault server cannot be reached at the transport level
-# (DNS failure, connection refused, timeout). Any HTTP response, including
-# 4xx/5xx or a sealed Vault, counts as reachable.
-vault_server_unreachable() {
-  local server="$1"
-  local rc=0
-  curl --silent --output /dev/null \
-    --max-time "${BUILDKITE_PLUGIN_VAULT_SECRETS_CONNECT_TIMEOUT:-5}" \
-    "${server%/}/v1/sys/health" || rc=$?
-  # 6: could not resolve host, 7: failed to connect, 28: timed out
-  [[ "$rc" == 6 || "$rc" == 7 || "$rc" == 28 ]]
+# Returns 0 when a failed vault command's stderr shows a transport-level
+# failure (DNS failure, connection refused or reset, timeout), meaning the
+# server never produced an HTTP response. The decision is made from the login
+# attempt itself rather than a later probe, so a server that comes up between
+# the failure and the check cannot be mistaken for a non-connection failure.
+# Vault prints "Error making API request" whenever it received an HTTP
+# response (4xx/5xx, sealed Vault), so that always counts as reachable.
+vault_error_is_unreachable() {
+  local stderr_file="$1"
+  if grep -qiE 'Error making API request' "$stderr_file"; then
+    return 1
+  fi
+  grep -qiE 'connection refused|connection reset|no such host|i/o timeout|no route to host|network is unreachable|Client\.Timeout exceeded|context deadline exceeded|TLS handshake timeout|dial tcp' "$stderr_file"
 }
 
 # Runs a vault login command and prints the token on stdout.
-# Retries only while the server is unreachable, up to
+# Retries only while the login fails with a connection error, up to
 # BUILDKITE_PLUGIN_VAULT_SECRETS_CONNECTION_RETRIES times (default 0).
 # Returns BUILDKITE_PLUGIN_VAULT_SECRETS_UNREACHABLE_EXIT_CODE (default 75,
-# EX_TEMPFAIL)
-# if the server is still unreachable, 1 for any other failure.
+# EX_TEMPFAIL) if the server is still unreachable, 1 for any other failure.
 vault_login() {
   local server="$1"
   shift
@@ -29,16 +30,22 @@ vault_login() {
   local delay="${BUILDKITE_PLUGIN_VAULT_SECRETS_CONNECTION_RETRY_DELAY:-5}"
   local attempt=0
   local token
+  local stderr_file
+  stderr_file=$(mktemp)
 
   while true; do
-    if token=$(vault "$@"); then
+    if token=$(vault "$@" 2>"$stderr_file"); then
+      rm -f "$stderr_file"
       echo "$token"
       return 0
     fi
-    if ! vault_server_unreachable "$server"; then
+    cat "$stderr_file" >&2
+    if ! vault_error_is_unreachable "$stderr_file"; then
+      rm -f "$stderr_file"
       return 1
     fi
     if (( attempt >= retries )); then
+      rm -f "$stderr_file"
       echo "+++🚨 Vault server ${server} is unreachable" >&2
       return "${BUILDKITE_PLUGIN_VAULT_SECRETS_UNREACHABLE_EXIT_CODE:-75}"
     fi
