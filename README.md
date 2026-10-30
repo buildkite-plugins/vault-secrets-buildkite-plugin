@@ -395,9 +395,11 @@ Seconds to wait when checking whether the Vault server is reachable after a fail
 Default: `5`
 
 ### `unreachable-exit-code` (optional, integer)
-Exit code the hook uses when the Vault server is still unreachable after any retries. Set this to a dedicated value so the step can be retried automatically without also retrying genuine failures, which exit with `1`.
+Exit code the hook uses when the Vault server is still unreachable after any retries. Unreachable means the health probe could not connect at all (DNS failure, connection refused or timeout). The default, `75`, is `EX_TEMPFAIL` from `sysexits.h`. It differs from genuine failures, which exit with `1`, so the step can be retried automatically without also retrying those.
 
-Default: `1`
+Default: `75`
+
+Before this option existed, an unreachable server exited with `1`. Set `unreachable-exit-code: 1` to keep that behaviour, for example if existing retry rules or alerts match `exit_status: 1`.
 
 ```yml
 steps:
@@ -406,7 +408,6 @@ steps:
       - vault-secrets#v2.4.2:
           server: "http://127.0.0.1:8200"
           connection-retries: 3
-          unreachable-exit-code: 75
           auth:
             method: "approle"
             role-id: "my-role-id"

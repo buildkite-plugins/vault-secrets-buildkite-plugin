@@ -36,7 +36,7 @@ configuration:
       type: integer
       minimum: 1
       maximum: 255
-      description: "Exit code used when the Vault server is unreachable, for use with automatic retry (default 1)"
+      description: "Exit code used when the Vault server is unreachable, for use with automatic retry (default 75)"
     debug:
       type: boolean
       description: "Enable detailed debug logging to troubleshoot Vault connection issues"

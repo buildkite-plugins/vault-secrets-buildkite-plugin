@@ -182,25 +182,8 @@ setup_approle() {
 APPROLE_LOGIN="write -field=token -address=https://vault_svr_url auth/approle/login role_id=buildkite secret_id=abcde12345"
 HEALTH_PROBE="--silent --output /dev/null --max-time 5 https://vault_svr_url/v1/sys/health"
 
-@test "approle login fails with exit 1 when server is unreachable and no exit code is configured" {
+@test "approle login fails with exit 75 by default when server is unreachable" {
   setup_approle
-
-  stub vault "${APPROLE_LOGIN} : exit 2"
-  stub curl "${HEALTH_PROBE} : exit 7"
-
-  run bash -c "$PWD/hooks/environment"
-
-  assert_failure 1
-  assert_output --partial 'is unreachable'
-  assert_output --partial 'Failed to get vault token'
-
-  unstub vault
-  unstub curl
-}
-
-@test "approle login uses unreachable-exit-code when server is unreachable" {
-  setup_approle
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_UNREACHABLE_EXIT_CODE=75
 
   stub vault "${APPROLE_LOGIN} : exit 2"
   stub curl "${HEALTH_PROBE} : exit 7"
@@ -208,6 +191,23 @@ HEALTH_PROBE="--silent --output /dev/null --max-time 5 https://vault_svr_url/v1/
   run bash -c "$PWD/hooks/environment"
 
   assert_failure 75
+  assert_output --partial 'is unreachable'
+  assert_output --partial 'Failed to get vault token'
+
+  unstub vault
+  unstub curl
+}
+
+@test "approle login uses configured unreachable-exit-code when server is unreachable" {
+  setup_approle
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_UNREACHABLE_EXIT_CODE=1
+
+  stub vault "${APPROLE_LOGIN} : exit 2"
+  stub curl "${HEALTH_PROBE} : exit 7"
+
+  run bash -c "$PWD/hooks/environment"
+
+  assert_failure 1
   assert_output --partial 'is unreachable'
 
   unstub vault
@@ -241,7 +241,6 @@ HEALTH_PROBE="--silent --output /dev/null --max-time 5 https://vault_svr_url/v1/
 @test "approle login gives up with unreachable-exit-code after exhausting retries" {
   setup_approle
   export BUILDKITE_PLUGIN_VAULT_SECRETS_CONNECTION_RETRIES=1
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_UNREACHABLE_EXIT_CODE=75
 
   stub vault \
     "${APPROLE_LOGIN} : exit 2" \

@@ -19,7 +19,8 @@ vault_server_unreachable() {
 # Runs a vault login command and prints the token on stdout.
 # Retries only while the server is unreachable, up to
 # BUILDKITE_PLUGIN_VAULT_SECRETS_CONNECTION_RETRIES times (default 0).
-# Returns BUILDKITE_PLUGIN_VAULT_SECRETS_UNREACHABLE_EXIT_CODE (default 1)
+# Returns BUILDKITE_PLUGIN_VAULT_SECRETS_UNREACHABLE_EXIT_CODE (default 75,
+# EX_TEMPFAIL)
 # if the server is still unreachable, 1 for any other failure.
 vault_login() {
   local server="$1"
@@ -39,7 +40,7 @@ vault_login() {
     fi
     if (( attempt >= retries )); then
       echo "+++🚨 Vault server ${server} is unreachable" >&2
-      return "${BUILDKITE_PLUGIN_VAULT_SECRETS_UNREACHABLE_EXIT_CODE:-1}"
+      return "${BUILDKITE_PLUGIN_VAULT_SECRETS_UNREACHABLE_EXIT_CODE:-75}"
     fi
     attempt=$((attempt + 1))
     echo "Vault server ${server} is unreachable, retrying in ${delay}s (${attempt}/${retries})" >&2
