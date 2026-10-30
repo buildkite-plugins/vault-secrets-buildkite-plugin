@@ -20,6 +20,23 @@ configuration:
       enum:
         - 'yaml'
         - 'json'
+    connection-retries:
+      type: integer
+      minimum: 0
+      description: "Retry Vault login this many times while the server is unreachable (default 0)"
+    connection-retry-delay:
+      type: integer
+      minimum: 1
+      description: "Seconds to wait between connection retries (default 5)"
+    connect-timeout:
+      type: integer
+      minimum: 1
+      description: "Seconds to wait when probing Vault reachability (default 5)"
+    unreachable-exit-code:
+      type: integer
+      minimum: 1
+      maximum: 255
+      description: "Exit code used when the Vault server is unreachable, for use with automatic retry (default 1)"
     debug:
       type: boolean
       description: "Enable detailed debug logging to troubleshoot Vault connection issues"

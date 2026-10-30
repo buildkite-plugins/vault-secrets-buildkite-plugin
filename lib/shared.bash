@@ -3,6 +3,50 @@ set -ueo pipefail
 
 [ -z "${TMPDIR:-}" ] && TMPDIR=${TMPDIR:-/tmp}
 
+# Returns 0 when the Vault server cannot be reached at the transport level
+# (DNS failure, connection refused, timeout). Any HTTP response, including
+# 4xx/5xx or a sealed Vault, counts as reachable.
+vault_server_unreachable() {
+  local server="$1"
+  local rc=0
+  curl --silent --output /dev/null \
+    --max-time "${BUILDKITE_PLUGIN_VAULT_SECRETS_CONNECT_TIMEOUT:-5}" \
+    "${server%/}/v1/sys/health" || rc=$?
+  # 6: could not resolve host, 7: failed to connect, 28: timed out
+  [[ "$rc" == 6 || "$rc" == 7 || "$rc" == 28 ]]
+}
+
+# Runs a vault login command and prints the token on stdout.
+# Retries only while the server is unreachable, up to
+# BUILDKITE_PLUGIN_VAULT_SECRETS_CONNECTION_RETRIES times (default 0).
+# Returns BUILDKITE_PLUGIN_VAULT_SECRETS_UNREACHABLE_EXIT_CODE (default 1)
+# if the server is still unreachable, 1 for any other failure.
+vault_login() {
+  local server="$1"
+  shift
+  local retries="${BUILDKITE_PLUGIN_VAULT_SECRETS_CONNECTION_RETRIES:-0}"
+  local delay="${BUILDKITE_PLUGIN_VAULT_SECRETS_CONNECTION_RETRY_DELAY:-5}"
+  local attempt=0
+  local token
+
+  while true; do
+    if token=$(vault "$@"); then
+      echo "$token"
+      return 0
+    fi
+    if ! vault_server_unreachable "$server"; then
+      return 1
+    fi
+    if (( attempt >= retries )); then
+      echo "+++🚨 Vault server ${server} is unreachable" >&2
+      return "${BUILDKITE_PLUGIN_VAULT_SECRETS_UNREACHABLE_EXIT_CODE:-1}"
+    fi
+    attempt=$((attempt + 1))
+    echo "Vault server ${server} is unreachable, retrying in ${delay}s (${attempt}/${retries})" >&2
+    sleep "$delay"
+  done
+}
+
 vault_auth() {
   local server="$1"
 
@@ -39,11 +83,13 @@ vault_auth() {
 
         # export the vault token to be used for this job - this command writes to the auth/approle/login endpoint
         # on success, vault will return the token which we export as VAULT_TOKEN for this shell
-        if ! VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
+        local rc=0
+        VAULT_TOKEN=$(vault_login "$server" write -field=token -address="$server" auth/approle/login \
         role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID" \
-        secret_id="${secret_var:-}"); then
+        secret_id="${secret_var:-}") || rc=$?
+        if [[ "$rc" != 0 ]]; then
           echo "+++🚨 Failed to get vault token"
-          exit 1
+          exit "$rc"
         fi
 
         export VAULT_TOKEN
@@ -71,8 +117,11 @@ vault_auth() {
 
         # export the vault token to be used for this job - this is a standard vault auth command
         # on success, vault will return the token which we export as VAULT_TOKEN for this shell
-        if ! VAULT_TOKEN=$(vault login -field=token -address="$server" -method=aws role="$aws_role_name"); then
+        local rc=0
+        VAULT_TOKEN=$(vault_login "$server" login -field=token -address="$server" -method=aws role="$aws_role_name") || rc=$?
+        if [[ "$rc" != 0 ]]; then
           echo "+++🚨 Failed to get vault token"
+          exit "$rc"
         fi
 
         export VAULT_TOKEN
@@ -95,9 +144,11 @@ vault_auth() {
           exit 1
         fi
 
-        if ! VAULT_TOKEN=$(vault write -field=token auth/jwt/login role="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_JWT_ROLE:-"buildkite"}" jwt="${jwt_var:-}"); then
+        local rc=0
+        VAULT_TOKEN=$(vault_login "$server" write -field=token auth/jwt/login role="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_JWT_ROLE:-"buildkite"}" jwt="${jwt_var:-}") || rc=$?
+        if [[ "$rc" != 0 ]]; then
           echo "+++🚨 Failed to get vault token"
-          exit 1
+          exit "$rc"
         fi
 
         export VAULT_TOKEN

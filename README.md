@@ -377,6 +377,45 @@ steps:
             role-id: "my-role-id"
 ```
 
+### `connection-retries` (optional, integer)
+Number of times to retry Vault login while the server is unreachable (DNS failure, connection refused or timeout). Failures where Vault responds, such as bad credentials or a sealed Vault, are never retried.
+
+This helps when Vault, or a local Vault Agent/proxy, starts at the same time as the Buildkite agent and is briefly not listening yet.
+
+Default: `0`
+
+### `connection-retry-delay` (optional, integer)
+Seconds to wait between connection retries.
+
+Default: `5`
+
+### `connect-timeout` (optional, integer)
+Seconds to wait when checking whether the Vault server is reachable after a failed login.
+
+Default: `5`
+
+### `unreachable-exit-code` (optional, integer)
+Exit code the hook uses when the Vault server is still unreachable after any retries. Set this to a dedicated value so the step can be retried automatically without also retrying genuine failures, which exit with `1`.
+
+Default: `1`
+
+```yml
+steps:
+  - command: ./run_build.sh
+    plugins:
+      - vault-secrets#v2.4.2:
+          server: "http://127.0.0.1:8200"
+          connection-retries: 3
+          unreachable-exit-code: 75
+          auth:
+            method: "approle"
+            role-id: "my-role-id"
+    retry:
+      automatic:
+        - exit_status: 75
+          limit: 2
+```
+
 ### `auth` (required, object)
 Dictionary/map with the configuration of the parameters the plugin should use to authenticate with Vault.
 
