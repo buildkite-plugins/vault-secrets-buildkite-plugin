@@ -20,6 +20,10 @@ configuration:
       enum:
         - 'yaml'
         - 'json'
+    max-retries:
+      type: integer
+      minimum: 0
+      description: "Sets VAULT_MAX_RETRIES: how many times the Vault CLI retries a request that fails with a connection error or 5xx response (Vault default 2)"
     debug:
       type: boolean
       description: "Enable detailed debug logging to troubleshoot Vault connection issues"

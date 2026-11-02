@@ -109,6 +109,12 @@ fi
 export VAULT_NAMESPACE="${BUILDKITE_PLUGIN_VAULT_SECRETS_NAMESPACE:-root}"
 echo "Using namespace: $VAULT_NAMESPACE"
 
+# Let the Vault CLI retry transient failures (e.g. connection refused) itself.
+# Vault applies this to every request, including login and secret reads.
+if [[ -n "${BUILDKITE_PLUGIN_VAULT_SECRETS_MAX_RETRIES:-}" ]]; then
+  export VAULT_MAX_RETRIES="${BUILDKITE_PLUGIN_VAULT_SECRETS_MAX_RETRIES}"
+fi
+
 # Enable debug logging if requested (via plugin config or environment variable)
 DEBUG_MODE="${BUILDKITE_PLUGIN_VAULT_SECRETS_DEBUG:-false}"
 if [[ "${DEBUG_MODE}" =~ ^(true|1)$ ]]; then

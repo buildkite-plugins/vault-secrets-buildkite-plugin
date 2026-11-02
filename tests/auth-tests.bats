@@ -169,3 +169,50 @@ setup() {
 
   unstub vault
 }
+
+@test "max-retries option exports VAULT_MAX_RETRIES for vault calls" {
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_PATH=foobar
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=false
+  export BUILDKITE_PIPELINE_SLUG=testpipe
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_MAX_RETRIES=5
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD=approle
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID=buildkite
+  export VAULT_SECRET_ID=abcde12345
+  unset VAULT_MAX_RETRIES
+
+  # the stub fails unless the retry setting reached the vault process
+  stub vault \
+    'write -field=token -address=https://vault_svr_url auth/approle/login role_id=buildkite secret_id=abcde12345 : [ "$VAULT_MAX_RETRIES" = 5 ] && echo token' \
+    'kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0' \
+    'kv list -address=https://vault_svr_url -format=yaml foobar : exit 0'
+
+  run bash -c "$PWD/hooks/environment"
+
+  assert_success
+  assert_output --partial 'Successfully authenticated with RoleID'
+
+  unstub vault
+}
+
+@test "VAULT_MAX_RETRIES from the agent environment is left alone when max-retries is unset" {
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_PATH=foobar
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=false
+  export BUILDKITE_PIPELINE_SLUG=testpipe
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD=approle
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID=buildkite
+  export VAULT_SECRET_ID=abcde12345
+  export VAULT_MAX_RETRIES=7
+
+  stub vault \
+    'write -field=token -address=https://vault_svr_url auth/approle/login role_id=buildkite secret_id=abcde12345 : [ "$VAULT_MAX_RETRIES" = 7 ] && echo token' \
+    'kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0' \
+    'kv list -address=https://vault_svr_url -format=yaml foobar : exit 0'
+
+  run bash -c "$PWD/hooks/environment"
+
+  assert_success
+
+  unstub vault
+}
