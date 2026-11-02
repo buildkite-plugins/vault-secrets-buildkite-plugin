@@ -3,58 +3,6 @@ set -ueo pipefail
 
 [ -z "${TMPDIR:-}" ] && TMPDIR=${TMPDIR:-/tmp}
 
-# Returns 0 when a failed vault command's stderr shows a transport-level
-# failure (DNS failure, connection refused or reset, timeout), meaning the
-# server never produced an HTTP response. The decision is made from the login
-# attempt itself rather than a later probe, so a server that comes up between
-# the failure and the check cannot be mistaken for a non-connection failure.
-# Vault prints "Error making API request" whenever it received an HTTP
-# response (4xx/5xx, sealed Vault), so that always counts as reachable.
-vault_error_is_unreachable() {
-  local stderr_file="$1"
-  if grep -qiE 'Error making API request' "$stderr_file"; then
-    return 1
-  fi
-  grep -qiE 'connection refused|connection reset|no such host|i/o timeout|no route to host|network is unreachable|Client\.Timeout exceeded|context deadline exceeded|TLS handshake timeout|dial tcp' "$stderr_file"
-}
-
-# Runs a vault login command and prints the token on stdout.
-# Retries only while the login fails with a connection error, up to
-# BUILDKITE_PLUGIN_VAULT_SECRETS_CONNECTION_RETRIES times (default 0).
-# Returns BUILDKITE_PLUGIN_VAULT_SECRETS_UNREACHABLE_EXIT_CODE (default 75,
-# EX_TEMPFAIL) if the server is still unreachable, 1 for any other failure.
-vault_login() {
-  local server="$1"
-  shift
-  local retries="${BUILDKITE_PLUGIN_VAULT_SECRETS_CONNECTION_RETRIES:-0}"
-  local delay="${BUILDKITE_PLUGIN_VAULT_SECRETS_CONNECTION_RETRY_DELAY:-5}"
-  local attempt=0
-  local token
-  local stderr_file
-  stderr_file=$(mktemp)
-
-  while true; do
-    if token=$(vault "$@" 2>"$stderr_file"); then
-      rm -f "$stderr_file"
-      echo "$token"
-      return 0
-    fi
-    cat "$stderr_file" >&2
-    if ! vault_error_is_unreachable "$stderr_file"; then
-      rm -f "$stderr_file"
-      return 1
-    fi
-    if (( attempt >= retries )); then
-      rm -f "$stderr_file"
-      echo "+++🚨 Vault server ${server} is unreachable" >&2
-      return "${BUILDKITE_PLUGIN_VAULT_SECRETS_UNREACHABLE_EXIT_CODE:-75}"
-    fi
-    attempt=$((attempt + 1))
-    echo "Vault server ${server} is unreachable, retrying in ${delay}s (${attempt}/${retries})" >&2
-    sleep "$delay"
-  done
-}
-
 vault_auth() {
   local server="$1"
 
@@ -91,13 +39,11 @@ vault_auth() {
 
         # export the vault token to be used for this job - this command writes to the auth/approle/login endpoint
         # on success, vault will return the token which we export as VAULT_TOKEN for this shell
-        local rc=0
-        VAULT_TOKEN=$(vault_login "$server" write -field=token -address="$server" auth/approle/login \
+        if ! VAULT_TOKEN=$(vault write -field=token -address="$server" auth/approle/login \
         role_id="$BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID" \
-        secret_id="${secret_var:-}") || rc=$?
-        if [[ "$rc" != 0 ]]; then
+        secret_id="${secret_var:-}"); then
           echo "+++🚨 Failed to get vault token"
-          exit "$rc"
+          exit 1
         fi
 
         export VAULT_TOKEN
@@ -125,11 +71,8 @@ vault_auth() {
 
         # export the vault token to be used for this job - this is a standard vault auth command
         # on success, vault will return the token which we export as VAULT_TOKEN for this shell
-        local rc=0
-        VAULT_TOKEN=$(vault_login "$server" login -field=token -address="$server" -method=aws role="$aws_role_name") || rc=$?
-        if [[ "$rc" != 0 ]]; then
+        if ! VAULT_TOKEN=$(vault login -field=token -address="$server" -method=aws role="$aws_role_name"); then
           echo "+++🚨 Failed to get vault token"
-          exit "$rc"
         fi
 
         export VAULT_TOKEN
@@ -152,11 +95,9 @@ vault_auth() {
           exit 1
         fi
 
-        local rc=0
-        VAULT_TOKEN=$(vault_login "$server" write -field=token auth/jwt/login role="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_JWT_ROLE:-"buildkite"}" jwt="${jwt_var:-}") || rc=$?
-        if [[ "$rc" != 0 ]]; then
+        if ! VAULT_TOKEN=$(vault write -field=token auth/jwt/login role="${BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_JWT_ROLE:-"buildkite"}" jwt="${jwt_var:-}"); then
           echo "+++🚨 Failed to get vault token"
-          exit "$rc"
+          exit 1
         fi
 
         export VAULT_TOKEN

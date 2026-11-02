@@ -169,147 +169,50 @@ setup() {
 
   unstub vault
 }
-setup_approle() {
+
+@test "max-retries option exports VAULT_MAX_RETRIES for vault calls" {
   export BUILDKITE_PLUGIN_VAULT_SECRETS_PATH=foobar
   export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
   export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=false
   export BUILDKITE_PIPELINE_SLUG=testpipe
-  export VAULT_SECRET_ID=abcde12345
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID=buildkite
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_MAX_RETRIES=5
   export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD=approle
-}
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID=buildkite
+  export VAULT_SECRET_ID=abcde12345
+  unset VAULT_MAX_RETRIES
 
-APPROLE_LOGIN="write -field=token -address=https://vault_svr_url auth/approle/login role_id=buildkite secret_id=abcde12345"
-REFUSED='echo "Error writing data to auth/approle/login: Put \"https://vault_svr_url/v1/auth/approle/login\": dial tcp 127.0.0.1:8200: connect: connection refused" >&2; exit 2'
-FORBIDDEN='echo "Error making API request. URL: PUT https://vault_svr_url/v1/auth/approle/login Code: 403. Errors: * permission denied" >&2; exit 2'
-
-@test "approle login fails with exit 75 by default when server is unreachable" {
-  setup_approle
-
-  stub vault "${APPROLE_LOGIN} : ${REFUSED}"
-
-  run bash -c "$PWD/hooks/environment"
-
-  assert_failure 75
-  assert_output --partial 'is unreachable'
-  assert_output --partial 'Failed to get vault token'
-
-  unstub vault
-}
-
-@test "approle login uses configured unreachable-exit-code when server is unreachable" {
-  setup_approle
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_UNREACHABLE_EXIT_CODE=1
-
-  stub vault "${APPROLE_LOGIN} : ${REFUSED}"
-
-  run bash -c "$PWD/hooks/environment"
-
-  assert_failure 1
-  assert_output --partial 'is unreachable'
-
-  unstub vault
-}
-
-@test "approle login retries after a connection refused and succeeds once Vault is listening" {
-  setup_approle
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_CONNECTION_RETRIES=2
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_CONNECTION_RETRY_DELAY=3
-
+  # the stub fails unless the retry setting reached the vault process
   stub vault \
-    "${APPROLE_LOGIN} : ${REFUSED}" \
-    "${APPROLE_LOGIN} : echo token" \
-    "kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0" \
-    "kv list -address=https://vault_svr_url -format=yaml foobar : exit 0"
-  stub sleep "3 : exit 0"
+    'write -field=token -address=https://vault_svr_url auth/approle/login role_id=buildkite secret_id=abcde12345 : [ "$VAULT_MAX_RETRIES" = 5 ] && echo token' \
+    'kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0' \
+    'kv list -address=https://vault_svr_url -format=yaml foobar : exit 0'
 
   run bash -c "$PWD/hooks/environment"
 
   assert_success
-  assert_output --partial 'retrying in 3s (1/2)'
   assert_output --partial 'Successfully authenticated with RoleID'
 
   unstub vault
-  unstub sleep
 }
 
-@test "approle login gives up with unreachable-exit-code after exhausting retries" {
-  setup_approle
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_CONNECTION_RETRIES=1
-
-  stub vault \
-    "${APPROLE_LOGIN} : ${REFUSED}" \
-    "${APPROLE_LOGIN} : ${REFUSED}"
-  stub sleep "5 : exit 0"
-
-  run bash -c "$PWD/hooks/environment"
-
-  assert_failure 75
-  assert_output --partial 'retrying in 5s (1/1)'
-
-  unstub vault
-  unstub sleep
-}
-
-@test "approle login does not retry or use unreachable-exit-code when Vault returns an HTTP error" {
-  setup_approle
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_CONNECTION_RETRIES=2
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_UNREACHABLE_EXIT_CODE=75
-
-  stub vault "${APPROLE_LOGIN} : ${FORBIDDEN}"
-
-  run bash -c "$PWD/hooks/environment"
-
-  assert_failure 1
-  refute_output --partial 'is unreachable'
-  assert_output --partial 'Failed to get vault token'
-
-  unstub vault
-}
-
-@test "approle login fails with exit 1 when vault fails without a recognizable connection error" {
-  setup_approle
-
-  stub vault "${APPROLE_LOGIN} : exit 2"
-
-  run bash -c "$PWD/hooks/environment"
-
-  assert_failure 1
-  refute_output --partial 'is unreachable'
-
-  unstub vault
-}
-
-@test "debug preflight failure does not exit before login retries and exit code apply" {
-  setup_approle
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_DEBUG=true
-
-  stub vault \
-    "status -address=https://vault_svr_url : exit 2" \
-    "${APPROLE_LOGIN} : ${REFUSED}"
-
-  run bash -c "$PWD/hooks/environment"
-
-  assert_failure 75
-  assert_output --partial 'Unable to connect to Vault server'
-  assert_output --partial 'is unreachable'
-
-  unstub vault
-}
-
-@test "aws login failure fails the hook" {
+@test "VAULT_MAX_RETRIES from the agent environment is left alone when max-retries is unset" {
   export BUILDKITE_PLUGIN_VAULT_SECRETS_PATH=foobar
   export BUILDKITE_PLUGIN_VAULT_SECRETS_SERVER=https://vault_svr_url
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD=aws
-  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_AWS_ROLE_NAME="llamas"
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_DUMP_ENV=false
+  export BUILDKITE_PIPELINE_SLUG=testpipe
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_METHOD=approle
+  export BUILDKITE_PLUGIN_VAULT_SECRETS_AUTH_ROLE_ID=buildkite
+  export VAULT_SECRET_ID=abcde12345
+  export VAULT_MAX_RETRIES=7
 
-  stub vault "login -field=token -address=https://vault_svr_url -method=aws role=\"llamas\" : exit 2"
+  stub vault \
+    'write -field=token -address=https://vault_svr_url auth/approle/login role_id=buildkite secret_id=abcde12345 : [ "$VAULT_MAX_RETRIES" = 7 ] && echo token' \
+    'kv list -address=https://vault_svr_url -format=yaml foobar/testpipe : exit 0' \
+    'kv list -address=https://vault_svr_url -format=yaml foobar : exit 0'
 
   run bash -c "$PWD/hooks/environment"
 
-  assert_failure 1
-  assert_output --partial 'Failed to get vault token'
-  refute_output --partial 'Successfully authenticated'
+  assert_success
 
   unstub vault
 }

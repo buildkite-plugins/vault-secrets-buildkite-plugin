@@ -354,6 +354,23 @@ Expects one of the following values:
 
 Default: `yaml`
 
+### `max-retries` (optional, integer)
+Sets Vault's native [`VAULT_MAX_RETRIES`](https://developer.hashicorp.com/vault/docs/commands#vault_max_retries) for every Vault CLI call the plugin makes (login and secret reads). The Vault client retries requests that fail with a connection error (such as connection refused, for example when Vault or a local Vault Agent is briefly not listening) or a 5xx response, with its own backoff. Vault's default is `2`; set `0` to disable retries.
+
+If the variable is already set in the agent environment and this option is omitted, the agent value is used.
+
+```yml
+steps:
+  - command: ./run_build.sh
+    plugins:
+      - vault-secrets#v2.4.2:
+          server: "http://127.0.0.1:8200"
+          max-retries: 5
+          auth:
+            method: "approle"
+            role-id: "my-role-id"
+```
+
 ### `debug` (optional, boolean)
 Enable detailed debug logging to troubleshoot connection and authentication issues with Vault.
 
@@ -375,41 +392,6 @@ steps:
           auth:
             method: "approle"
             role-id: "my-role-id"
-```
-
-### `connection-retries` (optional, integer)
-Number of times to retry Vault login while the server is unreachable (DNS failure, connection refused or timeout). Failures where Vault responds, such as bad credentials or a sealed Vault, are never retried.
-
-This helps when Vault, or a local Vault Agent/proxy, starts at the same time as the Buildkite agent and is briefly not listening yet.
-
-Default: `0`
-
-### `connection-retry-delay` (optional, integer)
-Seconds to wait between connection retries.
-
-Default: `5`
-
-### `unreachable-exit-code` (optional, integer)
-Exit code the hook uses when the Vault server is still unreachable after any retries. Unreachable means the login attempt itself failed to get any HTTP response from Vault (DNS failure, connection refused or timeout). The default, `75`, is `EX_TEMPFAIL` from `sysexits.h`. It differs from genuine failures, which exit with `1`, so the step can be retried automatically without also retrying those.
-
-Default: `75`
-
-Before this option existed, an unreachable server exited with `1`. Set `unreachable-exit-code: 1` to keep that behaviour, for example if existing retry rules or alerts match `exit_status: 1`.
-
-```yml
-steps:
-  - command: ./run_build.sh
-    plugins:
-      - vault-secrets#v2.4.2:
-          server: "http://127.0.0.1:8200"
-          connection-retries: 3
-          auth:
-            method: "approle"
-            role-id: "my-role-id"
-    retry:
-      automatic:
-        - exit_status: 75
-          limit: 2
 ```
 
 ### `auth` (required, object)
