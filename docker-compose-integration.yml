@@ -1,7 +1,7 @@
 version: '2.3'
 services:
   vault-svc:
-    image: "vault:${SVC_VAULT_VERSION:-1.12.1}"
+    image: "hashicorp/vault:${SVC_VAULT_VERSION:-1.21.4}"
     healthcheck:
       test: wget http://127.0.0.1:8200/v1/sys/health > /dev/null 2>&1
       interval: 2s
