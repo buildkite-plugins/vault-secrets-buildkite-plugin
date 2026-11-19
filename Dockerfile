@@ -1,4 +1,4 @@
-FROM hashicorp/vault:1.21.4
+FROM hashicorp/vault:2.2.2
 
 # vault doesn't include bash by default, and we want some functionality that bash provides
 # so we'll install it manually and pin the version
